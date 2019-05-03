@@ -270,7 +270,7 @@ void gsTensorBSpline<d,T>::setFurthestCorner(gsMatrix<T> const &v)
 
 
 template<short_t d, class T>
-void gsTensorBSpline<d,T>::degreeElevate(int const i, int const dir)
+void gsTensorBSpline<d,T>::degreeElevate(int const i, short_t const dir)
 {
     if (dir == -1)
     {

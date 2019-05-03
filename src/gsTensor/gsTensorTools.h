@@ -197,9 +197,9 @@ void permuteTensorVector( const gsVector<index_t,d> & perm,
 
 /// \brief Flips tensor directions in place
 /// \ingroup Tensor
-template <typename T, int d>
-void flipTensorVector(const int dir,
-                      const gsVector<index_t,d> & sz, 
+template <typename T, short_t d>
+void flipTensorVector(const short_t dir,
+                      const gsVector<index_t,d> & sz,
                       gsMatrix<T> & coefs)
 {
     GISMO_ASSERT( sz.prod()  == coefs.rows(), 

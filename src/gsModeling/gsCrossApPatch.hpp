@@ -50,7 +50,7 @@ const gsGeometry<T> & gsCrossApPatch<T>::compute()
 }
 
 template <typename T>
-template <unsigned d>
+template <short_t d>
 void gsCrossApPatch<T>::compute_impl()
 {
     GISMO_STATIC_ASSERT(d==2,"gsCrossApPatch<T>::compute_impl only works for d=2 dimensions.");

@@ -49,7 +49,7 @@ public:
 
 private:
 
-    template<unsigned d> void compute_impl();
+    template<short_t d> void compute_impl();
 
 protected:
 

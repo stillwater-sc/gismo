@@ -31,7 +31,7 @@ namespace gismo
 
     \ingroup Matrix
 */
-template<class T, int _Rows, int _Options>
+template<class T, short_t _Rows, int _Options>
 class gsVector : public gsMatrix<T, _Rows, 1, _Options>
 //class gsVector : public gsMatrix<T, _Rows, (_Rows!=-1 ? 1 : -1), _Options>
 {
@@ -102,7 +102,7 @@ public:
     // implicitly deleted in C++11
     //gsVector(const gsVector& a) : gsBase(a) { }
 
-    explicit gsVector(int dimension) ;
+    explicit gsVector(short_t dimension) ;
 
     inline operator Ref () { return Ref(*this); }
 
@@ -224,6 +224,7 @@ public:
     template<typename OtherDerived>
     gsVector3d(const Eigen::MatrixBase<OtherDerived>& other) : Base(other) { }
 
+    /// Angle between this and other gsVector3d
     T angle(const gsVector3d<T> & other)
     {
         return math::acos(this->normalized().dot(other.normalized()));
@@ -263,14 +264,14 @@ public:
 }; // class gsVector3d
 
 
-template<class T, int _Rows, int _Options> inline
+template<class T, short_t _Rows, int _Options> inline
 gsVector<T,_Rows,_Options>::gsVector() : gsBase() { }
 
-template<class T, int _Rows, int _Options> inline
+template<class T, short_t _Rows, int _Options> inline
 gsVector<T,_Rows,_Options>::gsVector(const Base& a): gsBase(a) { }
 
-template<class T, int _Rows, int _Options> inline
-gsVector<T,_Rows,_Options>::gsVector(int dimension): gsBase(dimension,1) { }
+template<class T, short_t _Rows, int _Options> inline
+gsVector<T,_Rows,_Options>::gsVector(short_t dimension): gsBase(dimension,1) { }
 
 template<class T> inline
 gsVector3d<T>::gsVector3d() : Base() { }
