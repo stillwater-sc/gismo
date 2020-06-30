@@ -34,6 +34,8 @@ class gsDPatch
 
         mutable gsDofMapper m_mapper;
 
+        mutable gsSparseMatrix<T> m_matrix;
+
 
         mutable std::vector<std::pair<patchCorner,index_t>> m_bVertices;
         mutable std::vector<std::pair<patchCorner,index_t>> m_iVertices;
@@ -124,31 +126,143 @@ class gsDPatch
 
             gsBasis<T> * basis = &m_patches.basis(side1.patch);
 
-            gsMatrix<index_t> indices1 = basis->boundaryOffset(side1.side(),index2);
+            gsVector<index_t> indices1 = static_cast<gsVector<index_t>>(basis->boundaryOffset(side1.side(),index2));
+
             index_t n = indices1.rows();
             if (side1.side()==1) //west
                 if (side2.side().parameter()==0) //south
-                    index = indices1(index1,0);
+                    index = indices1(index1);
                 else
-                    index = indices1(n-1-index1,0); //north
+                    index = indices1(n-1-index1); //north
             else if (side1.side()==2) //east
                 if (side2.side().parameter()==0) //south
-                    index = indices1(index1,0);
+                    index = indices1(index1);
                 else
-                    index = indices1(n-1-index1,0); //north
+                    index = indices1(n-1-index1); //north
             else if (side1.side()==3) //south
                 if (side2.side().parameter()==0) //west
-                    index = indices1(index1,0);
+                    index = indices1(index1);
                 else
-                    index = indices1(n-1-index1,0); //east
+                    index = indices1(n-1-index1); //east
             else if (side1.side()==4) //north
                 if (side2.side().parameter()==0) //west
-                    index = indices1(index1,0);
+                    index = indices1(index1);
                 else
-                    index = indices1(n-1-index1,0); //east
+                    index = indices1(n-1-index1); //east
 
             return index;
         }
+
+        const gsVector<index_t> indicesFromVert(index_t index, const patchCorner corner, const patchSide side, index_t offset = 0)
+        {
+            /*
+                Finds indices i1,...,in in the direction of side away from the vertex
+
+            */
+
+            gsVector<index_t> result(index);
+
+            gsBasis<T> * basis = &m_patches.basis(side.patch);
+
+            gsVector<index_t> indices = static_cast<gsVector<index_t>>(basis->boundaryOffset(side.side(),offset));
+            if (side.side()==1) //west
+            {
+                if (corner.corner()==1)//southwest
+                    result = indices.head(index);
+                else if (corner.corner()==3) //northwest
+                    result = indices.tail(index);
+                else
+                    GISMO_ERROR(corner.corner() << "is not adjacent to side "<<side.side()<<"!");
+            }
+            else if (side.side()==2) //east
+            {
+                if (corner.corner()==2)//southeast
+                    result = indices.head(index);
+                else if (corner.corner()==4) //northeast
+                    result = indices.tail(index);
+                else
+                    GISMO_ERROR(corner.corner() << "is not adjacent to side "<<side.side()<<"!");
+            }
+            else if (side.side()==3) //south
+            {
+                if (corner.corner()==1)//southwest
+                    result = indices.head(index);
+                else if (corner.corner()==2) //southeast
+                    result = indices.tail(index);
+                else
+                    GISMO_ERROR(corner.corner() << "is not adjacent to side "<<side.side()<<"!");
+            }
+            else if (side.side()==4) //north
+            {
+                if (corner.corner()==3)//northwest
+                    result = indices.head(index);
+                else if (corner.corner()==4) //northeast
+                    result = indices.tail(index);
+                else
+                    GISMO_ERROR(corner.corner() << "is not adjacent to side "<<side.side()<<"!");
+            }
+            return result;
+        }
+
+        const index_t indexFromVert(index_t index, const patchCorner corner, const patchSide side, index_t offset = 0)
+        {
+            /*
+                Finds indices i in the direction of side away from the vertex
+                if index = 0, the corner index is requested
+            */
+
+            index_t result;
+
+            gsBasis<T> * basis = &m_patches.basis(corner.patch);
+
+            if (index==0)
+            {
+                result = basis->functionAtCorner(corner.corner());
+            }
+            else
+            {
+                gsVector<index_t> indices = static_cast<gsVector<index_t>>(basis->boundaryOffset(side.side(),offset));
+                index_t end = indices.rows()-1;
+                if (side.side()==1) //west
+                {
+                    if (corner.corner()==1)//southwest
+                        result = indices.at(index);
+                    else if (corner.corner()==3) //northwest
+                        result = indices.at(end-index);
+                    else
+                        GISMO_ERROR(corner.corner() << "is not adjacent to side "<<side.side()<<"!");
+                }
+                else if (side.side()==2) //east
+                {
+                    if (corner.corner()==2)//southeast
+                        result = indices.at(index);
+                    else if (corner.corner()==4) //northeast
+                        result = indices.at(end-index);
+                    else
+                        GISMO_ERROR(corner.corner() << "is not adjacent to side "<<side.side()<<"!");
+                }
+                else if (side.side()==3) //south
+                {
+                    if (corner.corner()==1)//southwest
+                        result = indices.at(index);
+                    else if (corner.corner()==2) //southeast
+                        result = indices.at(end-index);
+                    else
+                        GISMO_ERROR(corner.corner() << "is not adjacent to side "<<side.side()<<"!");
+                }
+                else if (side.side()==4) //north
+                {
+                    if (corner.corner()==3)//northwest
+                        result = indices.at(index);
+                    else if (corner.corner()==4) //northeast
+                        result = indices.at(end-index);
+                    else
+                        GISMO_ERROR(corner.corner() << "is not adjacent to side "<<side.side()<<"!");
+                }
+            }
+            return result;
+        }
+        const index_t indexInCorner(const patchCorner corner) {return indexFromVert(0,corner,patchSide(corner.patch,1)); };
 
     protected: //functions
         const index_t sideIndex( index_t patch,  boxSide bside)     const   { return 4*patch + bside - 1; }
@@ -186,8 +300,309 @@ class gsDPatch
 
 
     public:
+        void initialize() // also initialize the mappers!
+        {
+            size_t nPatches = m_patches.nPatches();
+            size_t nInterfaces = m_patches.nInterfaces();
+            size_t nBoundaries = m_patches.nBoundary();
+
+            size_t size,tmp;
+            size = tmp = 0;
+            // number of interior basis functions
+            for (index_t k=0; k!=nPatches; k++)
+                tmp += (m_patches.basis(k).component(0).size()-4)*(m_patches.basis(k).component(1).size()-4);
+            gsDebug<<"Number of interior DoFs: "<<tmp<<"\n";
+            size += tmp;
+
+            // interfaces
+            gsBasis<T> * basis1;
+            gsBasis<T> * basis2;
+            gsVector<index_t> indices1,indices2;
+            tmp = 0;
+            for(gsBoxTopology::const_iiterator iit = m_patches.iBegin(); iit!= m_patches.iEnd(); iit++)
+            {
+                basis1 = &m_patches.basis(iit->first().patch);
+                basis2 = &m_patches.basis(iit->second().patch);
+                tmp += basis1->boundary(iit->first().side()).size() - 4;
+                tmp += basis2->boundary(iit->second().side()).size() - 4;
+            }
+            gsDebug<<"Number of interface DoFs: "<<tmp<<"\n";
+            size += tmp;
+
+            // boundaries
+            tmp = 0;
+            for(gsBoxTopology::const_biterator bit = m_patches.bBegin(); bit!= m_patches.bEnd(); bit++)
+            {
+                basis1 = &m_patches.basis(bit->patch);
+                tmp += 2*(basis1->boundary(bit->side()).size() - 4);
+            }
+            gsDebug<<"Number of boundary DoFs: "<<tmp<<"\n";
+            size += tmp;
+
+            // vertices
+            tmp = 0;
+            std::vector<bool> passed(m_patches.nPatches()*4);
+            std::fill(passed.begin(), passed.end(), false);
+
+            std::vector<patchCorner> corners;
+            index_t corn = 0;
+            for (index_t p=0; p!=m_patches.nPatches(); p++)
+                for (index_t c=1; c<=4; c++)
+                {
+                    index_t idx = vertIndex(p,c);
+                    if (!passed.at(idx))
+                    {
+                        m_patches.getCornerList(patchCorner(p,c),corners);
+
+                        for (index_t k=0; k!=corners.size(); k++)
+                            passed.at(vertIndex(corners[k].patch,corners[k])) = true;
+
+                        std::pair<index_t,bool> vdata = vertexData(patchCorner(p,c)); // corner c
+                        if (!vdata.second) // boundary vertex
+                            tmp += 4;
+                        else
+                            tmp += vdata.first; // valence;
+
+                        corn +=1;
+                    }
+                }
+            // gsDebug<<"Number of unique corners: "<<corn<<"\n";
+
+            gsDebug<<"Number of vertex DoFs: "<<tmp<<"\n";
+
+            size += tmp;
+
+            m_matrix.resize(size,size);
+
+            gsDebugVar(size);
+        }
+
+        void initializeMapper() // also initialize the mappers!
+        {
+            // interfaces
+            std::fill(m_sideCheck.begin(), m_sideCheck.end(), false);
+            std::fill(m_vertCheck.begin(), m_vertCheck.end(), false);
+
+            gsBasis<T> * basis;
+
+            std::vector<index_t> patches(2);
+            std::vector<patchSide> psides(2);
+            gsVector<index_t> indices;
+            std::vector<patchCorner> pcorners;
+            patchCorner pcorner;
+            size_t end;
+            index_t cidx, sidx;
+            std::pair<index_t,bool> vdata1, vdata2;
+            index_t jmin, jmax;
+
+            for(gsBoxTopology::const_iiterator iit = m_patches.iBegin(); iit!= m_patches.iEnd(); iit++)
+            {
+                sidx = sideIndex( iit->second().patch,iit->second().side());
+                if (m_sideCheck.at(sidx))
+                    continue;
+
+                patches[0] = iit->first().patch;
+                patches[1] = iit->second().patch;
+                psides[0] = patchSide(iit->first().patch,iit->first().side()); // the interface on the first patch
+                psides[1] = patchSide(iit->second().patch,iit->second().side()); // the interface on the second patch
+
+                for (index_t p = 0; p != 2; p++)
+                {
+                    sidx = sideIndex( patches[p] ,psides[p] );
+                    if (m_sideCheck.at(sidx))
+                        continue;
+
+                    /*
+                        o o o @ X | X @ o o o               X: eliminated DoFs by interface/boundary rule
+                        o o o @ X | X @ o o o               @: modified DoFs by interface rule
+                        o o o ? ? | ? ? o o o               o: preserved DoFs (interior)
+                        @ @ ? x x | x x ? @ @               ?: Depends on the vertex (X and @ if not (interior vertex & valence = 4))
+                        X X ? x x | x x ? X X               x: handled in vertex rule
+                        ----------|----------
+                                  | x x ? X X
+                                  | x x ? @ @
+                                  | ? ? o o o
+                                  | X @ o o o
+                                  | X @ o o o
+
+                    */
+                    basis = &m_patches.basis(patches[p]);
+                    indices = static_cast<gsVector<index_t>>( basis->boundary(psides[p]) );
+                    end = indices.size()-1;
+
+                    patchSide(iit->first().patch,iit->first().side()).getContainedCorners(m_dim,pcorners);
+                    vdata1 = this->vertexData(pcorners[0]);
+                    vdata2 = this->vertexData(pcorners[1]);
+
+                    jmin = 2;
+                    jmax = end-2;
+                    if (vdata1.first!=4 && vdata1.second) // corner 1 is interior vertex with valence unequal to 4
+                    {
+                        cidx = basis->functionAtCorner(pcorners[0]);
+                        if (cidx==indices.at(0))
+                            jmin = 3;
+                        else if (cidx==indices.at(indices.size()-1))
+                            jmax = end-3;
+                        else
+                            GISMO_ERROR("Place unknown?");
+                    }
+                    else if (vdata2.first!=4 && vdata2.second) // corner 2 is interior vertex with valence unequal to 4
+                    {
+                        cidx = basis->functionAtCorner(pcorners[0]);
+                        if (cidx==indices.at(0))
+                            jmin = 3;
+                        else if (cidx==indices.at(indices.size()-1))
+                            jmax = end-3;
+                        else
+                            GISMO_ERROR("Place unknown?");
+                    }
+                    indices = indices.segment(jmin,jmax-jmin+1); // start at jmin and have length jmax-jmin+1
+                    m_mapper.markBoundary(patches[p], indices);
+
+                    gsDebug<<"Eliminated "<<indices.transpose()<<" of basis "<<patches[p]<<"\n";
+                    m_sideCheck.at(sidx) = true;
+                }
+            }
+
+            // boundaries
+            for(gsBoxTopology::const_biterator bit = m_patches.bBegin(); bit!= m_patches.bEnd(); bit++)
+            {
+                sidx = sideIndex(bit->patch,bit->side());
+                m_sideCheck.at(sidx) = true;
+            }
+
+            // vertices
+            for (index_t p=0; p!=m_patches.nPatches(); p++)
+            {
+                for (index_t c=1; c<=4; c++)
+                {
+                    cidx = vertIndex(p,c);
+                    if (m_vertCheck.at(cidx))
+                        continue;
+
+                    pcorner = patchCorner(p,c);
+                    this->vertexInfo(pcorner);
+
+                    // get valence and vertex info of corner
+                    std::pair<index_t,bool> vdata = vertexData(pcorner); // corner c
+                    if (!vdata.second) // boundary vertex
+                    {
+                        if (vdata.first==2) //valence = 2
+                        {
+                            /*
+                                o o o @ X |i| X @ o o o                 x: eliminated DoFs by vertex rule
+                                o o o @ X |n| X @ o o o                 X: eliminated DoFs by interface/boundary rule
+                                o o o @ X |t| X @ o o o                 o: preserved DoFs (interior)
+                                o o o * x |e| x * o o o                 @: modified DoFs by interface rule
+                                o o o * x |r| x * o o o                 *: modified DoFs by vertex rule (unique DoFs)
+                                -----------------------                 %: modified DoFs by vertex rule (matched DoFs)
+                                -boundary-| | -boundary-
+                                -----------------------
+                            */
+                            // we mark the nodes belonging to the interface
+                            pcorner.getContainingSides(m_dim,psides);
+                            for (index_t p=0; p!=psides.size(); p++)
+                            {
+                                if (m_patches.isInterface(psides[p]))
+                                {
+                                    m_mapper.markBoundary(pcorner.patch,indicesFromVert(2,pcorner,psides[p]));
+                                    gsDebug<<"Eliminated "<<indicesFromVert(2,pcorner,psides[p]).transpose()<<" of basis "<<pcorner.patch<<"\n";
+                                }
+
+                            }
+                        }
+                        else if (vdata.first==3) //valence = 3
+                        {
+                            /*
+                                o o o @ X |i| X @ o o o                 x: eliminated DoFs by vertex rule
+                                o o o @ X |n| X @ o o o                 X: eliminated DoFs by interface/boundary rule
+                                o o o @ X |t| X @ o o o                 o: preserved DoFs (interior)
+                                @ @ @ * x |e| x * @ @ @                 @: modified DoFs by interface rule
+                                X X X x % |r| % x X X X                 *: modified DoFs by vertex rule (unique DoFs)
+                                -----------------------                 %: modified DoFs by vertex rule (matched DoFs)
+                                -boundary-| |-interface
+                                -----------------------
+                                         b| | % x X X X
+                                         o| | x * @ @ @
+                                         u| | X @ o o o
+                                         n| | X @ o o o
+                                         d| | X @ o o o
+
+                            */
+                            // We handle all corners associated to pcorner
+                            m_patches.getCornerList(pcorner,pcorners);
+                            for (index_t c=0; c!=pcorners.size(); c++)
+                            {
+                                // Eliminate their 0,1 and 1,0 vertices
+                                pcorners[c].getContainingSides(m_dim,psides);
+                                m_mapper.eliminateDof(indexFromVert(1,pcorners[c],psides[0]),pcorners[c].patch);
+                                m_mapper.eliminateDof(indexFromVert(1,pcorners[c],psides[1]),pcorners[c].patch);
+                                // m_mapper.markTagged(indexFromSides(1,psides[0],1,psides[1]),pcorners[c].patch);
+                                gsDebug<<"Eliminated "<<indexFromSides(1,psides[0],1,psides[1])<<" of basis "<<pcorners[c].patch<<"\n";
+
+                                // And match the 0,0 vertex (i.e. the corner) to the corner that is first in the list pcorners.
+                                if (c!=0)
+                                {
+                                    patchSide pseudo = patchSide(pcorner.patch,1); // this side does not contribute since we use index = 0 in indexFromVert
+                                    m_mapper.matchDof(pcorners[0].patch,indexFromVert(0,pcorners[0],pseudo),pcorners[c].patch,indexFromVert(0,pcorners[c],pseudo));
+                                    gsDebug<<"Matched "<<indexFromVert(0,pcorners[0],pseudo)<<" of basis "<<pcorners[0].patch<<" with "<<indexFromVert(0,pcorners[c],pseudo)<<" of basis "<<pcorners[c].patch<<"\n";
+
+                                }
+                                // mark the vertex as passed
+                                m_vertCheck[ vertIndex(pcorners[c].patch, pcorners[c].corner()) ] = true;
+                            }
+                        }
+                        else if (vdata.first==1) //valence = 1
+                        {  } // do nothing
+                        else
+                            GISMO_ERROR("Boundary vertex with valence = "<<vdata.first<<" has no implementation");
+                    }
+                    else // interior vertex
+                    {
+                        if (vdata.first==4)
+                        {
+                            /*
+                                o o o @ X |i| X @ o o o                 x: eliminated DoFs by vertex rule
+                                o o o @ X |n| X @ o o o                 X: eliminated DoFs by interface/boundary rule
+                                o o o @ X |t| X @ o o o                 o: preserved DoFs (interior)
+                                @ @ @ * x |e| x * @ @ @                 @: modified DoFs by interface rule
+                                X X X x x |r| x x X X X                 *: modified DoFs by vertex rule (unique DoFs)
+                                -----------------------
+                                -boundary-| |-interface
+                                -----------------------
+                                X X X x x |i| x x X X X
+                                @ @ @ * x |n| x * @ @ @
+                                o o o @ X |t| X @ o o o
+                                o o o @ X |e| X @ o o o
+                                o o o @ X |r| X @ o o o
+
+                            */
+                            // we mark the nodes belonging to the interfaces (both sides bordering the vertex)
+                            pcorner.getContainingSides(m_dim,psides);
+                            for (index_t p=0; p!=psides.size(); p++)
+                            {
+                                m_mapper.markBoundary(pcorner.patch,indicesFromVert(2,pcorner,psides[p]));
+                                gsDebug<<"Eliminated "<<indicesFromVert(2,pcorner,psides[p]).transpose()<<" of basis "<<pcorner.patch<<"\n";
+                            }
+                        }
+                        else
+                            GISMO_ERROR("Extraordinary vertex!! -- to be implemented\n");
+                    }
+
+                    // label vertex as processed
+                    m_vertCheck[ cidx ] = true;
+                }
+            }
+            m_mapper.finalize();
+            // m_mapper.markCoupledAsTagged();
+            gsDebugVar(m_mapper.freeSize());
+            gsDebugVar(m_mapper.coupledSize());
+        }
+
+
         void computeAll()
         {
+            std::fill(m_sideCheck.begin(), m_sideCheck.end(), false);
             std::vector<std::vector<patchCorner> > cornerLists;
             m_patches.getEVs(cornerLists);
             if (cornerLists.size()!=0)
@@ -231,6 +646,7 @@ class gsDPatch
                 patches[1] = iit->second().patch;
                 psides[0] = patchSide(iit->first().patch,iit->first().side()); // the interface on the first patch
                 psides[1] = patchSide(iit->second().patch,iit->second().side()); // the interface on the second patch
+
                 for (index_t p=0; p!=2; p++)
                 {
                     psides[p].getContainedCorners(m_dim,corners); //corners on first patch
@@ -251,11 +667,20 @@ class gsDPatch
                                 gsInfo<<"this case should not exist...\n";
                             else if (vdata.first==2) //valence = 2
                             {
-                                gsDebugVar(indices[0]);
-                                gsDebugVar(indices[1]);
-                                gsDebugVar(corners[c]);
-                                gsDebugVar(basis[0]->functionAtCorner(corners[0]));
-                                gsDebugVar(basis[0]->functionAtCorner(corners[1]));
+                                m_mapper.markBoundary(patches[p],indicesFromVert(1,corners[c],psides[p]));
+
+
+                                // // interface is extended
+                                // index_t cIdx = basis[p]->functionAtCorner(corners[c]);
+                                // if (cIdx==indices[p].at(0))
+                                //     minJ[p] = 0;
+                                // else if (cIdx==indices[p].at(indices[p].size()-1))
+                                //     maxJ[p] = indices[p].size()-1;
+                                // else
+                                //     GISMO_ERROR("Place unknown?");
+
+                                // gsDebugVar(indexFromVert(2,corners[c],psides[p],1));
+
                                 /*
                                  TO DO:
                                  - add change of imin, jmin, imax, jmax
@@ -263,6 +688,22 @@ class gsDPatch
                             }
                             else if (vdata.first==3) //valence = 3
                             {
+                                /*
+                                    o o o @ X | X @ o o o               x: eliminated DoFs by vertex rule
+                                    o o o @ X | X @ o o o               X: eliminated DoFs by interface/boundary rule
+                                    o o o @ X | X @ o o o               o: preserved DoFs (interior)
+                                    @ @ @ * x | x * @ @ @               @: modified DoFs by interface rule
+                                    X X X x % | % x X X X               *: modified DoFs by vertex rule (unique DoFs)
+                                    ----------|----------               %: modified DoFs by vertex rule (matched DoFs)
+                                              | % x X X X
+                                              | x * @ @ @
+                                              | X @ o o o
+                                              | X @ o o o
+                                              | X @ o o o
+
+                                */
+                                m_mapper.eliminateDof(patches[p],indexFromVert(1,corners[c],psides[p]));
+                                // m_mapper.matchDofs(patches[p],indexFromSides);
                                 gsInfo<<"to be implemented\n";
                             }
                             else
@@ -276,30 +717,41 @@ class gsDPatch
                             }
                             else
                             {
-                                /*
-                                    TO DO:
-                                    - add change of imin, jmin, imax, jmax
-                                */
-                                gsInfo<<"Extraordinary vertex!!\n";
+                                index_t cIdx = basis[p]->functionAtCorner(corners[c]);
+                                if (cIdx==indices[p].at(0))
+                                    minJ[p] = 3;
+                                else if (cIdx==indices[p].at(indices[p].size()-1))
+                                    maxJ[p] = indices[p].size()-4;
+                                else
+                                    GISMO_ERROR("Place unknown?");
+
+                                gsInfo<<"Extraordinary vertex!! -- to be implemented\n";
                             }
                         }
 
                         // label vertex as processed
                         m_vertCheck[ idx ] = true;
                     }
-
                     /*
                         Now we treat the interior degrees of freedom. For all interface DoFs, a linear combination of basis functions is constructed and the DoFs located on the interface are removed from the mapper.
                     */
-                    indices[p] = m_sides.at( sideIndex(patches[p],psides[p]) ).at(0) = indices[p].block(minJ[p],0,maxJ[p],1);
+                    indices[p] = m_sides.at( sideIndex(patches[p],psides[p]) ).at(0) = indices[p].block(minJ[p],0,maxJ[p]-minJ[p]+1,1);
                     m_mapper.markBoundary(patches[p],indices[p]);
+
+
 
                     // TO DO: fill H-matrix entries.
 
                     // label side as processed
                     m_sideCheck[ sideIndex(patches[p], psides[p]) ] = true;
+
+                gsDebug<<"Eliminated indices: "<<indices[p].transpose()<<" of patch "<<patches[p]<<"\n";
                 }
+
             }
+
+            m_mapper.finalize();
+            gsDebugVar(m_mapper.freeSize());
 
             // boundaries
             for(gsBoxTopology::const_biterator bit = m_patches.bBegin(); bit!= m_patches.bEnd(); bit++)
@@ -775,9 +1227,11 @@ int main(int argc, char* argv[])
     patchSide s;
 
     gsDPatch<real_t> dpatch(mpBspline);
-    dpatch.sideInfo();
-    dpatch.cornerInfo();
-    dpatch.computeAll();
+    // dpatch.sideInfo();
+    // dpatch.cornerInfo();
+    dpatch.initialize();
+    dpatch.initializeMapper();
+    // dpatch.computeAll();
 
     // fileIO
     std::ofstream boundaries, oboundaries,interfaces, ointerfaces,vertices, overtices;
