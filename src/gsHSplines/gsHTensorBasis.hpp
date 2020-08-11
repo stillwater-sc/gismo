@@ -1024,11 +1024,11 @@ gsMatrix<index_t>  gsHTensorBasis<d,T>::allBoundary( ) const
 template<short_t d, class T>
 gsMatrix<index_t>  gsHTensorBasis<d,T>::
 boundaryOffset(boxSide const & s,index_t offset) const
-{ 
+{
     //get information on the side
     index_t k   = s.direction();
     bool par = s.parameter();
-    
+
     std::vector<index_t> temp;
     gsVector<index_t,d>  ind;
     // i goes through all levels of the hierarchical basis
@@ -1050,6 +1050,24 @@ boundaryOffset(boxSide const & s,index_t offset) const
         }
     }
     return makeMatrix<index_t>(temp.begin(),temp.size(),1 );
+}
+
+template<short_t d, class T>
+index_t  gsHTensorBasis<d,T>::
+functionAtCorner(boxCorner const & c) const
+{
+    // Get parametric points of corner
+    gsVector<bool> pars;
+    c.parameters_into(d,pars);
+    // Cast to reals and find the level
+    gsMatrix<T> mat = pars.template cast<T>();
+    index_t lvl = getLevelAtPoint(mat);
+
+    // Get the index of the corner on the level
+    index_t index = m_bases[lvl]->functionAtCorner(c);
+
+    // Transform to (continuous) HBspline index.
+    return this->flatTensorIndexToHierachicalIndex(index,lvl);
 }
 
 /*
