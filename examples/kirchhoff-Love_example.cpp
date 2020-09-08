@@ -93,6 +93,10 @@ private:
         cJac = _G.data().values[1].reshapeCol(k, _G.data().dim.first, _G.data().dim.second).transpose();
         const Scalar measure =  _G.data().measures.at(k);
 
+        gsDebugVar(cJac);
+        gsDebugVar(normal);
+        gsDebugVar(measure);
+
         // gsDebugVar(_G.data().values[0].col(k).transpose());
 
         for (index_t d = 0; d!= cols(); ++d) // for all basis function components
@@ -1576,6 +1580,19 @@ int main(int argc, char *argv[])
         fn = "../extensions/unsupported/filedata/quarter_sphere.xml";
         gsReadFile<>(fn, mp);
     }
+    else if (testCase == 20)
+    {
+        // Unit square
+        // gsReadFile<>("planar/annulus_4p.xml", mp);
+        gsMultiPatch<> mp_old;
+        mp_old.addPatch( gsNurbsCreator<>::BSplineSquare(1) ); // degree
+        mp = mp_old.uniformSplit();
+        mp.computeTopology();
+        mp.embed(3);
+        E_modulus = 1;
+        thickness = 1;
+        PoissonRatio = 0;
+    }
     else
     {
         // Unit square
@@ -1777,6 +1794,61 @@ int main(int argc, char *argv[])
 
         tmp << 0,0,-1;
     }
+    else if (testCase == 20)
+    {
+        // real_t Load = 1e-1;
+        // neu << 0, 0, -Load;
+        // neuData.setValue(neu,3);
+
+        // real_t T1 = 0.5;
+        // std::string nx = std::to_string(-T1) + "*cos(atan2(y,x))";
+        // std::string ny = std::to_string(-T1) + "*sin(atan2(y,x))";
+        // std::string nz = "0";
+        // neuDataFun1 = gsFunctionExpr<>(nx,ny,nz,3);
+
+        // for (index_t p=0; p!=mp.nPatches(); p++)
+        // {
+        //     // bc.addCondition(p,boundary::west, condition_type::neumann, &neuDataFun1 ); // unknown 0 - x
+        //     bc.addCondition(p,boundary::west, condition_type::neumann, &neuData ); // unknown 0 - x
+        //     bc.addCondition(p,boundary::east, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 1 - y
+        //     bc.addCondition(p,boundary::east, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 1 - y
+        //     bc.addCondition(p,boundary::east, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 2 - z
+        // }
+
+        bc.addCondition(0,boundary::south, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
+        bc.addCondition(0,boundary::south, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
+        bc.addCondition(0,boundary::south, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+        bc.addCondition(0,boundary::west, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
+        bc.addCondition(0,boundary::west, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
+        bc.addCondition(0,boundary::west, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+
+        // bc.addCondition(1,boundary::west, condition_type::neumann, &neuDataFun1 ); // unknown 0 - x
+        bc.addCondition(1,boundary::west, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
+        bc.addCondition(1,boundary::west, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
+        bc.addCondition(1,boundary::west, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+        bc.addCondition(1,boundary::north, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
+        bc.addCondition(1,boundary::north, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
+        bc.addCondition(1,boundary::north, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+
+        // bc.addCondition(2,boundary::south, condition_type::neumann, &neuDataFun1 ); // unknown 0 - x
+        bc.addCondition(2,boundary::south, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
+        bc.addCondition(2,boundary::south, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
+        bc.addCondition(2,boundary::south, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+        bc.addCondition(2,boundary::east, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
+        bc.addCondition(2,boundary::east, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
+        bc.addCondition(2,boundary::east, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+
+        // bc.addCondition(3,boundary::east, condition_type::neumann, &neuDataFun1 ); // unknown 0 - x
+        bc.addCondition(3,boundary::east, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
+        bc.addCondition(3,boundary::east, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
+        bc.addCondition(3,boundary::east, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+        bc.addCondition(3,boundary::north, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
+        bc.addCondition(3,boundary::north, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
+        bc.addCondition(3,boundary::north, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+
+
+        tmp << 0,0,-1;
+    }
     //! [Refinement]
 
     //! [Problem setup]
@@ -1884,9 +1956,19 @@ int main(int argc, char *argv[])
 
     auto F        = ff;
 
+    // gsVector<> pt(2); pt.setConstant(0.25);
+    // gsVector<> pt2(3); pt2.setConstant(2);
 
-    gsVector<> pt(2); pt.setConstant(0.25);
-    gsVector<> pt2(3); pt2.setConstant(2);
+    // gsDebug<<ev.eval(var1(u,defG)  ,pt,1)<<"\n";
+    // gsDebug<<ev.eval(sn(defG)  ,pt,1)<<"\n";
+
+
+    // gsDebug<<ev.eval(E_m_der,pt,0)<<"\n";
+    // gsDebug<<ev.eval(E_f_der,pt,0)<<"\n";
+
+    // gsDebug<<ev.eval(N_der,pt,0)<<"\n";
+    // gsDebug<<ev.eval(M_der,pt,0)<<"\n";
+
     // gsMatrix<> pt(7,2);
     // pt<<0,0,
     // 0,0.5,
