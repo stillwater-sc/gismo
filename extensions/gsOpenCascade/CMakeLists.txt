@@ -17,6 +17,7 @@ if (NOT OpenCascade_FOUND)
     URL https://people.ricam.oeaw.ac.at/gismo/thirdparty/opencascade-7.3.0.tgz
     UPDATE_COMMAND ""
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DCMAKE_INSTALL_MESSAGE=NEVER
+               -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                -DOCE_TESTING=OFF -DOCE_VISUALISATION=OFF -DOCE_DISABLE_X11=ON   )
 
   set(OCC_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/OCC-prefix/include/opencascade CACHE INTERNAL "")
@@ -30,7 +31,7 @@ else()
     #add_custom_target (OCC)
 endif()
 
-message("{OCC_INCLUDE_DIR}  ${OCC_INCLUDE_DIR}")
+#message("{OCC_INCLUDE_DIR}  ${OCC_INCLUDE_DIR}")
 include_directories(SYSTEM ${OCC_INCLUDE_DIR})
 
 set(OCC_SOURCES gsReadBrep.cpp)

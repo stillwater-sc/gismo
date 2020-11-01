@@ -15,8 +15,8 @@ gismo_fetch_directory(Unum
     DESTINATION    external
 )
 
-set(UNUM_INCLUDE_DIR ${gismo_SOURCE_DIR}/external/Unum/posit CACHE INTERNAL "")
+set(UNUM_INCLUDE_DIR ${gismo_SOURCE_DIR}/external/Unum/include CACHE INTERNAL "")
 include_directories(${UNUM_INCLUDE_DIR})
 
 install(DIRECTORY ${UNUM_INCLUDE_DIR}
-        DESTINATION include/posit/ OPTIONAL)
+        DESTINATION include/unum/ OPTIONAL)
