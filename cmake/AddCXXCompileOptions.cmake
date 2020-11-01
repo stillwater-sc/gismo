@@ -3,165 +3,469 @@
 ## This file is part of the G+Smo library. 
 ##
 ## Authors: M. Moeller and A. Mantzaflaris 
-## Copyright (C) 2012 - 2017 RICAM-Linz.
+## Copyright (C) 2012 - 2020 RICAM-Linz.
 ######################################################################
 
 set(CMAKE_CXX_STANDARD_DEFAULT 11)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
-
-  # CMake does not yet provide flags for the Portland Group compiler
-  
-  # The Portland Group
-  if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
-    set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "$std=c++98")
-    set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "$std=c++98")
-    set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
-    set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=c++11")
-    set(CMAKE_CXX_STANDARD_DEFAULT 11)
-  else()
-    set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++0x")
-    set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=c++0x")
-    set(CMAKE_CXX_STANDARD_DEFAULT 98)
-  endif()
-  
-endif()
-
-if (CMAKE_VERSION VERSION_LESS "3.1")
-
-if ((CMAKE_SYSTEM_NAME STREQUAL "Darwin") AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
-
-    #also: -stdlib=libc++ 
+# This file is a backport from CMake 3.16.4. If the current CMake
+# version is equal or better we do not make use of this backport
+if (CMAKE_VERSION VERSION_LESS "3.16")
     
+  if ((CMAKE_SYSTEM_NAME STREQUAL "Darwin") AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
+
     # Apple Clang
+    if(NOT "x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
+      set(CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN "-fvisibility-inlines-hidden")
+    endif()
+    
     if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.0)
       set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++98")
-      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")      
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")
+      set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
+      
       set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
       set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++11")
-      set(CMAKE_CXX_STANDARD_DEFAULT 11)
     endif()
     
     if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.1)
       set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++14")
       set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++14")
-      set(CMAKE_CXX_STANDARD_DEFAULT 14)
+      set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
     elseif(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.1)
       # AppleClang 5.0 knows this flag, but does not set a __cplusplus macro greater than 201103L
       set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++1y")
       set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++1y")
-      set(CMAKE_CXX_STANDARD_DEFAULT 14)
+      set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
     endif()
-        
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-
+    
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.1)
+      set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++1z")
+      set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++1z")
+    endif()
+    
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
+      set(CMAKE_CXX11_STANDARD__HAS_FULL_SUPPORT ON)
+    endif()
+    
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)
+      set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std=c++2a")
+      set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std=gnu++2a")
+    endif()
+    
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    
     # LLVM Clang
-    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2.1)
-      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "")
-      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")
-      set(CMAKE_CXX_STANDARD_DEFAULT 98)
-    endif()
-    
-    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.1)
-      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
-      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++11")
-      #set(CMAKE_CXX_STANDARD_DEFAULT 11) # travis/gcc4.6
-    elseif(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2.1)
-      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++0x")
-      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++0x")
-      #set(CMAKE_CXX_STANDARD_DEFAULT 11)
-    endif()
-    
-    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.5)
-      set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++14")
-      set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++14")
-      set(CMAKE_CXX_STANDARD_DEFAULT 14)
-    elseif(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.4)
-      set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++1y")
-      set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++1y")
-      # .. additionally requires gnu libstdc++  greater than 4.6
-      # set(CMAKE_CXX_STANDARD_DEFAULT 14)
-    endif()
+    if("x${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}" STREQUAL "xGNU")
+      if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2.1)
+	set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++98")
+	set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")
+      endif()
+      
+      if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.1)
+	set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++11")
+	set(CMAKE_CXX11_STANDARD__HAS_FULL_SUPPORT ON)
+      elseif(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2.1)
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++0x")
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++0x")
+      endif()
+      
+      if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.5)
+	set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++14")
+	set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++14")
+	set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
+      elseif(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.4)
+	set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++1y")
+	set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++1y")
+	set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
+      endif()
+      
+      set(_clang_version_std17 5.0)
+      if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+	set(_clang_version_std17 6.0)
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "${_clang_version_std17}")
+	set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17")
+	set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++17")
+      elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.5)
+	set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++1z")
+	set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++1z")
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "${_clang_version_std17}")
+	set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std=c++2a")
+	set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std=gnu++2a")
+      endif()
 
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      unset(_clang_version_std17)
+
+      if("x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
+	# The MSVC standard library requires C++14, and MSVC itself has no
+	# notion of operating in a mode not aware of at least that standard.
+	set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++14")
+	set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++14")
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++14")
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++14")
+	
+	# This clang++ is missing some features because of MSVC compatibility.
+	unset(CMAKE_CXX11_STANDARD__HAS_FULL_SUPPORT)
+	unset(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT)
+	unset(CMAKE_CXX17_STANDARD__HAS_FULL_SUPPORT)
+	unset(CMAKE_CXX20_STANDARD__HAS_FULL_SUPPORT)
+      endif()
+      
+    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 3.9
+	AND CMAKE_CXX_SIMULATE_VERSION VERSION_GREATER_EQUAL 19.0)
+      # This version of clang-cl and the MSVC version it simulates have
+      # support for -std: flags.
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
+      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std:c++14")
+      set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std:c++14")
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0)
+	set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std:c++17")
+	set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std:c++17")
+	set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std:c++latest")
+	set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std:c++latest")
+      else()
+	set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std:c++latest")
+	set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std:c++latest")
+      endif()
+      
+    else()
+      # This version of clang-cl, or the MSVC version it simulates, does not have
+      # language standards.  Set these options as empty strings so the feature
+      # test infrastructure can at least check to see if they are defined.
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "")
+
+      # There is no meaningful default for this
+      set(CMAKE_CXX_STANDARD_DEFAULT "")
+    endif()
+    
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
     # GNU Compiler Collection
-    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.4)
-      # Supported since 4.3
-      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++98")
-      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")
-      set(CMAKE_CXX_STANDARD_DEFAULT 98)
+    if (WIN32)
+      if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
+	set(CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN "-fno-keep-inline-dllexport")
+      endif()
+    else()
+      if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.0)
+	set(CMAKE_CXX_COMPILE_OPTIONS_VISIBILITY_INLINES_HIDDEN "-fvisibility-inlines-hidden")
+      endif()
     endif()
     
+    if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.4)
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++98")
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")
+    endif()
+
     if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.7)
+      set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
       set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
       set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++11")
-      set(CMAKE_CXX_STANDARD_DEFAULT 11)
     elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.4)
       # 4.3 supports 0x variants
       set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++0x")
       set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++0x")
-      set(CMAKE_CXX_STANDARD_DEFAULT 14)
     endif()
-    
+
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8.1)
+      set(CMAKE_CXX11_STANDARD__HAS_FULL_SUPPORT ON)
+    endif()
+
     if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
       set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++14")
       set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++14")
-      set(CMAKE_CXX_STANDARD_DEFAULT 14)
     elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
       set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++1y")
       set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++1y")
-      set(CMAKE_CXX_STANDARD_DEFAULT 14)
+    endif()
+
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+      set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
+    endif()
+
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
+      set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17")
+      set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++17")
+    elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.1)
+      set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++1z")
+      set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++1z")
+    endif()
+
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
+      set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std=c++2a")
+      set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std=gnu++2a")
     endif()
    
-elseif ( "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xIntel")
-
-    # Intel compiler 
-    if("x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
-      set(_std -Qstd)
-      set(_ext c++)
-    else()
-      set(_std -std)
-      set(_ext gnu++)
-    endif()
-
-    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 13.1)
-      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "${_std}=c++98")
-      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "${_std}=${_ext}98")
-      set(CMAKE_CXX_STANDARD_DEFAULT 98)
-    endif()
-
-    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.2)
-      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "${_std}=c++11")
-      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "${_std}=${_ext}11")
-      set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "${_std}=c++14")
-      # todo: there is no gnu++14 value supported; figure out what to do
-      set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "${_std}=c++14")
-      set(CMAKE_CXX_STANDARD_DEFAULT 14)
-    elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
-      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "${_std}=c++0x")
-      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "${_std}=${_ext}0x")
-      set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "${_std}=c++1y")
-      # todo: there is no gnu++14 value supported; figure out what to do
-      set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "${_std}=c++1y")
-      set(CMAKE_CXX_STANDARD_DEFAULT 14)
-    endif()
-           
-    unset(_std)
-    unset(_ext)
+  elseif ( "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xIntel")
     
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
+    # Intel compiler
+    string(APPEND CMAKE_CXX_FLAGS_MINSIZEREL_INIT " -DNDEBUG")
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE_INIT " -DNDEBUG")
+    string(APPEND CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT " -DNDEBUG")
+    
+    set(CMAKE_DEPFILE_FLAGS_CXX "-MD -MT <OBJECT> -MF <DEPFILE>")
+    
+    if("x${CMAKE_CXX_SIMULATE_ID}" STREQUAL "xMSVC")
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18.0.0)
+	set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-Qstd=c++17")
+	set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-Qstd=c++17")
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16.0)
+	set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-Qstd=c++14")
+	set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-Qstd=c++14")
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 13.0)
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-Qstd=c++11")
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-Qstd=c++11")
+      elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.1)
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-Qstd=c++0x")
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-Qstd=c++0x")
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.1)
+	set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "")
+	set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "")
+	set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
+      endif()  
+
+    else()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 18.0.0)
+	set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17")
+	set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=gnu++17")
+      endif()
+      
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17.0)
+	set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.2)
+	set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++14")
+      elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+	set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++1y")
+      endif()
+      
+      # Intel 15.0.2 accepts c++14 instead of c++1y, but not gnu++14
+      # instead of gnu++1y.  Intel 17.0.0 accepts gnu++14 too.
+      if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 17.0)
+	set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++14")
+      elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0.0)
+	set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++1y")
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0)
+	set(CMAKE_CXX11_STANDARD__HAS_FULL_SUPPORT ON)
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 13.0)
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++11")
+      elseif (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.1)
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++0x")
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++0x")
+      endif()
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.1)
+	set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++98")
+	set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=gnu++98")
+	set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
+      endif()
+      
+    endif()
+
+    set(CMAKE_CXX_CREATE_PREPROCESSED_SOURCE "<CMAKE_CXX_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -E <SOURCE> > <PREPROCESSED_SOURCE>")
+    set(CMAKE_CXX_CREATE_ASSEMBLY_SOURCE "<CMAKE_CXX_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -S <SOURCE> -o <ASSEMBLY_SOURCE>")
+
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
+    
+    # The Portland Group
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.10)
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION  -A)
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION --gnu_extensions)
+      set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
+      if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.10)
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION  --c++11 -A)
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION --c++11 --gnu_extensions)
+	set(CMAKE_CXX11_STANDARD__HAS_FULL_SUPPORT ON)
+	if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.7)
+	  set(CMAKE_CXX14_STANDARD_COMPILE_OPTION  --c++14 -A)
+	  set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION --c++14 --gnu_extensions)
+	  set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
+	  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17.1)
+	    set(CMAKE_CXX17_STANDARD_COMPILE_OPTION  --c++17 -A)
+	    set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION --c++17 --gnu_extensions)
+	    set(CMAKE_CXX17_STANDARD__HAS_FULL_SUPPORT ON)
+	  endif()
+	endif()
+      endif()
+    endif()
+    
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
     
     # Oracle Solaris Studio
+    set(CMAKE_CXX_VERBOSE_FLAG "-v")
+    
+    set(CMAKE_CXX_COMPILE_OPTIONS_PIC -KPIC)
+    set(CMAKE_CXX_COMPILE_OPTIONS_PIE "")
+    set(_CMAKE_CXX_PIE_MAY_BE_SUPPORTED_BY_LINKER NO)
+    set(CMAKE_CXX_LINK_OPTIONS_PIE "")
+    set(CMAKE_CXX_LINK_OPTIONS_NO_PIE "")
+    set(CMAKE_SHARED_LIBRARY_CXX_FLAGS "-KPIC")
+    set(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "-G")
+    set(CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG "-R")
+    set(CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG_SEP ":")
+    set(CMAKE_SHARED_LIBRARY_SONAME_CXX_FLAG "-h")
+    
+    string(APPEND CMAKE_CXX_FLAGS_INIT " ")
+    string(APPEND CMAKE_CXX_FLAGS_DEBUG_INIT " -g")
+    string(APPEND CMAKE_CXX_FLAGS_MINSIZEREL_INIT " -xO2 -xspace -DNDEBUG")
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE_INIT " -xO3 -DNDEBUG")
+    string(APPEND CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT " -g -xO2 -DNDEBUG")
+    
+    set(CMAKE_DEPFILE_FLAGS_CXX "-xMD -xMF <DEPFILE>")
+    
+    # Initialize C link type selection flags.  These flags are used when
+    # building a shared library, shared module, or executable that links
+    # to other libraries to select whether to use the static or shared
+    # versions of the libraries.
+    foreach(type SHARED_LIBRARY SHARED_MODULE EXE)
+      set(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Bstatic")
+      set(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-Bdynamic")
+    endforeach()
+    
+    set(CMAKE_CXX_LINKER_WRAPPER_FLAG "-Qoption" "ld" " ")
+    set(CMAKE_CXX_LINKER_WRAPPER_FLAG_SEP ",")
+    
+    set(CMAKE_CXX_CREATE_PREPROCESSED_SOURCE "<CMAKE_CXX_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -E <SOURCE> > <PREPROCESSED_SOURCE>")
+    set(CMAKE_CXX_CREATE_ASSEMBLY_SOURCE "<CMAKE_CXX_COMPILER> <INCLUDES> <FLAGS> -S <SOURCE> -o <ASSEMBLY_SOURCE>")
+    
+    # Create archives with "CC -xar" in case user adds "-instances=extern"
+    # so that template instantiations are available to archive members.
+    set(CMAKE_CXX_CREATE_STATIC_LIBRARY
+      "<CMAKE_CXX_COMPILER> -xar -o <TARGET> <OBJECTS> "
+      "<CMAKE_RANLIB> <TARGET> ")
+    
     if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.13)
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-std=c++03")
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-std=c++03")
+      set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
       set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "-std=c++11")
       set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=c++11")
-      set(CMAKE_CXX_STANDARD_DEFAULT 11)
+      set(CMAKE_CXX_LINK_WITH_STANDARD_COMPILE_OPTION 1)
+      
+      if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.14)
+	set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std=c++14")
+	set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=c++14")
+      endif()
+    else()
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "-library=stlport4")
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "-library=stlport4")
+      set(CMAKE_CXX_LINK_WITH_STANDARD_COMPILE_OPTION 1)
     endif()
 
-endif()
+  elseif ( "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xXL")
 
-endif() # cmake 3.1
+    # XLClang
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.1.1)
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION  "")
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
+      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION  "-qlanglvl=extended0x")
+      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-qlanglvl=extended0x")
+      set(CMAKE_CXX11_STANDARD__HAS_FULL_SUPPORT ON)
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.1.2)
+	set(CMAKE_CXX11_STANDARD_COMPILE_OPTION  "-std=c++11")
+	set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "-std=gnu++11")
+	set(CMAKE_CXX14_STANDARD_COMPILE_OPTION  "-std=c++1y")
+	set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++1y")
+	set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
+      endif ()
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.1.0)
+	set(CMAKE_CXX14_STANDARD_COMPILE_OPTION  "-std=c++14")
+	set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std=gnu++14")
+      endif()
+    endif()
+
+    set(CMAKE_CXX_COMPILE_OBJECT
+      "<CMAKE_CXX_COMPILER> -x c++ <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
+
+  elseif ( "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xMSVC")
+    
+    if ((CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.0.24215.1 AND
+	  CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.10) OR
+	CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.10.25017)
+      
+      # VS 2015 Update 3 and above support language standard level flags,
+      # with the default and minimum level being C++14.
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX98_STANDARD__HAS_FULL_SUPPORT ON)
+      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "-std:c++14")
+      set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "-std:c++14")
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.11.25505)
+	set(CMAKE_CXX11_STANDARD__HAS_FULL_SUPPORT ON)
+	set(CMAKE_CXX14_STANDARD__HAS_FULL_SUPPORT ON)
+	set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std:c++17")
+	set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std:c++17")
+      else()
+	set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std:c++latest")
+	set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std:c++latest")
+      endif()
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.12.25835)
+	set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std:c++latest")
+	set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std:c++latest")
+      endif()
+      
+    elseif (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0)
+      # MSVC has no specific options to set language standards, but set them as
+      # empty strings anyways so the feature test infrastructure can at least check
+      # to see if they are defined.
+      set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX98_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX11_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX11_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX14_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX17_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX17_EXTENSION_COMPILE_OPTION "")
+      set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "")
+      set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "")
+      
+      # There is no meaningful default for this
+      set(CMAKE_CXX_STANDARD_DEFAULT "")
+    endif()
+
+    # /JMC "Just My Code" is only supported by MSVC 19.05 onward.
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.05)
+      set(CMAKE_CXX_COMPILE_OPTIONS_JMC "-JMC")
+    endif()
+    
+  endif()
+  
+endif(CMAKE_VERSION VERSION_LESS "3.16")
 
 # Set C++ standard
 if(DEFINED GISMO_BUILD_CPP11) # B.C.
@@ -177,7 +481,7 @@ if (NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD ${CMAKE_CXX_STANDARD_DEFAULT} CACHE INTERNAL "")
 endif()
 
-# Apply for Cmake less than 3.1
+# Apply for CMake less than 3.1
 if (CMAKE_VERSION VERSION_LESS "3.1")
 
   if ( NOT "x${CMAKE_CXX_STANDARD}" STREQUAL "x98" AND
@@ -186,53 +490,4 @@ if (CMAKE_VERSION VERSION_LESS "3.1")
   endif()
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX${CMAKE_CXX_STANDARD}_STANDARD_COMPILE_OPTION}")
-endif()#cmake<3.1
-
-
-# Bugfix for windows/msvc systems
-if(NOT DEFINED CMAKE_CXX${CMAKE_CXX_STANDARD}_STANDARD_COMPILE_OPTION)
-      set(CMAKE_CXX${CMAKE_CXX_STANDARD}_STANDARD_COMPILE_OPTION  "")
-      set(CMAKE_CXX${CMAKE_CXX_STANDARD}_EXTENSION_COMPILE_OPTION "")
-endif()
-
-
-# if(NOT DEFINED CMAKE_CXX${CMAKE_CXX_STANDARD}_STANDARD_COMPILE_OPTION) 
-#   if((CMAKE_SYSTEM_NAME STREQUAL "Darwin") AND (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
-#     # set(CMAKE_CXX_FLAGS "-stdlib=libc++")
-#     set(CMAKE_CXX${CMAKE_CXX_STANDARD}_STANDARD_COMPILE_OPTION "-std=c++${CMAKE_CXX_STANDARD}")
-#     set(CMAKE_CXX${CMAKE_CXX_STANDARD}_EXTENSION_COMPILE_OPTION "-std=gnu++${CMAKE_CXX_STANDARD}")
-#   elseif((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND MSVC)
-#     set(CMAKE_CXX${CMAKE_CXX_STANDARD}_STANDARD_COMPILE_OPTION "")
-#     set(CMAKE_CXX${CMAKE_CXX_STANDARD}_EXTENSION_COMPILE_OPTION "")
-#   endif()
-# endif()
-
-# if (CMAKE_VERSION VERSION_LESS "3.1" AND CMAKE_COMPILER_IS_GNUCC)
-#   if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.1)
-#     CHECK_CXX_COMPILER_FLAG("-std=c++${CMAKE_CXX_STANDARD}"
-#       COMPILER_SUPPORTS_CXX${CMAKE_CXX_STANDARD})
-#     if(COMPILER_SUPPORTS_CXX${CMAKE_CXX_STANDARD})
-#       if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${CMAKE_CXX_STANDARD} -stdlib=libc++")
-#       else()
-#         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${CMAKE_CXX_STANDARD}")
-#       endif()
-#     else()
-#       CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-#       if(COMPILER_SUPPORTS_CXX0X)
-#         if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#           set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -stdlib=libc++")
-#         else()
-#           set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-#         endif()
-#       else()
-#         message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++${CMAKE_CXX_STANDARD}.")
-#       endif()
-#     endif()
-#   else() #gcc 6.1
-#     if(CMAKE_CXX_STANDARD EQUAL "98")
-#       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98")
-#     endif() 
-#   endif() 
-# endif()#cmake<3.1
-
+endif(CMAKE_VERSION VERSION_LESS "3.1")
