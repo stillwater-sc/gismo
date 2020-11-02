@@ -7,8 +7,8 @@
 ## Unum extension
 project(gsUnumExtension)
 
-if(CMAKE_CXX_STANDARD EQUAL "98")
-  message(FATAL_ERROR "CMAKE_CXX_STANDARD must be 11 or better for Unum extensions to compile.")
+if(CMAKE_CXX_STANDARD EQUAL "98" OR CMAKE_CXX_STANDARD EQUAL "11" )
+  message(FATAL_ERROR "CMAKE_CXX_STANDARD must be 14 or better for Unum extensions to compile.")
 endif()
 
 # Apply same configuration as G+Smo
