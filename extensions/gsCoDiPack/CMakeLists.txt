@@ -7,6 +7,10 @@
 ## CoDiPack extension
 project(gsCoDiPackExtension)
 
+if(CMAKE_CXX_STANDARD EQUAL "98" )
+  message(FATAL_ERROR "CMAKE_CXX_STANDARD must be 11 or better for CoDiPack extensions to compile.")
+endif()
+
 # Apply same configuration as G+Smo
 include(gsConfig)
 
