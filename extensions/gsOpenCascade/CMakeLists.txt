@@ -6,7 +6,11 @@
 
 project(gsOpenCascade)
 
-#find_package(OpenCascade QUIET)
+if(CMAKE_CXX_STANDARD EQUAL "98")
+  message(FATAL_ERROR "CMAKE_CXX_STANDARD must be 11 or better for OpenCascade extensions to compile.")
+endif()
+
+find_package(OpenCascade 7.3.0 QUIET)
 
 if (NOT OpenCascade_FOUND)
   message("Will attempt to download and compile OpenCascade.")
@@ -20,7 +24,7 @@ if (NOT OpenCascade_FOUND)
                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                -DOCE_TESTING=OFF -DOCE_VISUALISATION=OFF -DOCE_DISABLE_X11=ON   )
 
-  set(OCC_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/OCC-prefix/include/opencascade CACHE INTERNAL "")
+  set(OCC_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/OCC-prefix/src/OCC-build/include/opencascade CACHE INTERNAL "")
   
   set(OCC_LIBNAMES TKBO TKBool TKBRep TKernel TKFeat TKFillet TKG2d TKG3d TKGeomAlgo TKGeomBase TKHLR TKIGES TKMath TKMesh TKOffset TKPrim TKShHealing TKSTEP TKSTEPAttr TKSTEPBase TKSTEP209 TKSTL TKTopAlgo TKXSBase TKVRML TKV3d TKService )
   foreach(OCC_LIB ${OCC_LIBNAMES})
@@ -31,7 +35,6 @@ else()
     #add_custom_target (OCC)
 endif()
 
-#message("{OCC_INCLUDE_DIR}  ${OCC_INCLUDE_DIR}")
 include_directories(SYSTEM ${OCC_INCLUDE_DIR})
 
 set(OCC_SOURCES gsReadBrep.cpp)
