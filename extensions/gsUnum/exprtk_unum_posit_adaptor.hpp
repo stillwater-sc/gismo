@@ -43,7 +43,6 @@ static const double sqrt2   =  1.41421356237309504880168872420969807856967187537
 }
 
 
-
 #define UNUM_TYPE posit_256_5
 #include "exprtk_unum_posit_adaptor.h"
 #undef UNUM_TYPE

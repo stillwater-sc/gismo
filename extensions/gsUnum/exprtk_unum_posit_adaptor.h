@@ -105,9 +105,6 @@ inline bool is_false_impl(const UNUM_TYPE& v)
     return !is_true_impl(v);
 }
 
-#ifndef EXPRTK_UNUM_POSIT_ADAPTOR_H
-#define EXPRTK_UNUM_POSIT_ADAPTOR_H
- 
 template <typename T>
 inline T expm1_impl(const T& v, UNUM_TYPE_TAG)
 {
@@ -300,7 +297,6 @@ inline T nor_impl(const T& v0, const T& v1, UNUM_TYPE_TAG)
 {
     return (is_false_impl(v0) && is_false_impl(v1)) ? T(1) : T(0);
 }
-#endif // EXPRTK_UNUM_POSIT_ADAPTOR_H
 }
 }
  
