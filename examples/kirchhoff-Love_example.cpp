@@ -8,7 +8,7 @@
     License, v. 2.0. If a copy of the MPL was not distributed with this
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-    Author(s): A. Mantzaflaris
+    Author(s): H.M. Verhelst & A. Mantzaflaris
 */
 
 //! [Include namespace]
@@ -93,12 +93,6 @@ private:
         cJac = _G.data().values[1].reshapeCol(k, _G.data().dim.first, _G.data().dim.second).transpose();
         const Scalar measure =  _G.data().measures.at(k);
 
-        gsDebugVar(cJac);
-        gsDebugVar(normal);
-        gsDebugVar(measure);
-
-        // gsDebugVar(_G.data().values[0].col(k).transpose());
-
         for (index_t d = 0; d!= cols(); ++d) // for all basis function components
         {
             const short_t s = d*A;
@@ -129,8 +123,6 @@ private:
         bGrads = sGrad.eval(k);
         cJac = _G.data().values[1].reshapeCol(k, _G.data().dim.first, _G.data().dim.second).transpose();
         const Scalar measure =  _G.data().measures.at(k);
-
-        // gsDebugVar(_G.data().values[0].col(k).transpose());
 
         m_v.noalias() = ( ( bGrads.col(0).template head<3>() ).cross( cJac.col(1).template head<3>() )
                       -   ( bGrads.col(1).template head<3>() ).cross( cJac.col(0).template head<3>() ) ) / measure;
@@ -552,154 +544,6 @@ public:
 };
 
 
-
-// template<class E1, class E2>
-// class hessdot_expr : public _expr<hessdot_expr<E1,E2> >
-// {
-//     typename E1::Nested_t _u;
-//     typename E2::Nested_t _v;
-
-// public:
-//     enum{ Space = E1::Space };
-
-//     typedef typename E1::Scalar Scalar;
-
-//     hessdot_expr(const E1 & u, const E2 & v) : _u(u), _v(v) {}
-
-//     mutable gsMatrix<Scalar> res, hess, tmp;
-//     mutable gsMatrix<Scalar> normalMat;
-
-//     MatExprType eval(const index_t k) const
-//     {
-//         const gsFuncData<Scalar> & udata = _u.data(); // udata.values[2].col(k)
-//         const index_t numAct = udata.values[0].rows();
-//         const gsAsConstMatrix<Scalar> ders(udata.values[2].col(k).data(), 3, numAct );
-
-//         tmp = _v.eval(k);
-
-//         res.resize(rows(), cols() );
-
-
-//             for (index_t i = 0; i!=tmp.rows(); ++i)
-//             {
-//                 res.block(i*numAct, 0, numAct, 3).noalias() = ders.transpose() * tmp.at(i);
-//             }
-
-//         return res;
-//     }
-
-//     index_t rows() const
-//     {
-//         return _u.dim() * _u.data().values[0].rows();
-//     }
-
-//     index_t cols() const
-//     {
-//         return // ( E2::rowSpan() ? rows() : 1 ) *
-//             _u.data().values[2].rows() / _u.data().values[0].rows();//=3
-//     }
-
-//     void setFlag() const
-//     {
-//         _u.data().flags |= NEED_2ND_DER;
-//         _v.setFlag();
-//     }
-
-//     void parse(gsSortedVector<const gsFunctionSet<Scalar>*> & evList) const
-//     {
-//         //GISMO_ASSERT(NULL!=m_fd, "FeVariable: FuncData member not registered");
-//         evList.push_sorted_unique(&_u.source());
-//         _u.data().flags |= NEED_2ND_DER;
-//     }
-
-//     const gsFeSpace<Scalar> & rowVar() const { return _u.rowVar(); }
-//     const gsFeSpace<Scalar> & colVar() const { return _v.rowVar(); }
-
-//     static constexpr bool rowSpan() {return E1::rowSpan(); }
-//     static constexpr bool colSpan() {return E2::rowSpan(); }
-
-//     void print(std::ostream &os) const { os << "hessdot("; _u.print(os); os <<")"; }
-// };
-
-/*
-    Evaluates:
-    [C1111,C1112,C1121,C1122][A11, A12] with input [C1111,C1122,C1112] (Hence assumes symmetry of C)
-    [C1211,C1212,C1221,C1222][A21, A22]            [C2211,C2222,C2212]
-    [C2111,C2112,C2121,C2122]                      [C1211,C1222,C1212]
-    [C2211,C2212,C2221,C2222]
-*/
-
-// template<class E1, class E2>
-// class flatprod_expr  : public _expr<flatprod_expr<E1,E2> >
-// {
-// public:
-//     typedef typename E1::Scalar Scalar;
-//     enum {ScalarValued = 0, Space = E1::Space};
-//     enum {ColBlocks = 1 };
-
-// private:
-//     typename E1::Nested_t _A;
-//     typename E2::Nested_t _C;
-//     mutable gsMatrix<Scalar> eA, eC, tmp, tmpA, res;
-
-// public:
-
-//     flatprod_expr(_expr<E1> const& A, _expr<E2> const& C) : _A(A),_C(C)
-//     {
-//         //GISMO_ASSERT( _u.rows()*_u.cols() == _n*_m, "Wrong dimension"); //
-//     }
-
-//     const gsMatrix<Scalar> & eval(const index_t k) const
-//     {
-//         const index_t An = _A.cardinality();
-
-//         eA = _A.eval(k);
-//         eC = _C.eval(k);
-
-//         // TO DO
-//         // GISMO_ASSERT(Bc==_A.rows(), "Dimensions: "<<Bc<<","<< _A.rows()<< "do not match");
-//         // GISMO_ASSERT(_A.rowSpan(), "First entry should be rowSpan");
-//         // GISMO_ASSERT(_C.colSpan(), "Second entry should be colSpan.");
-
-//         res.resize(eA.rows(), eA.cols());
-//         tmp.resize(2,2);
-//         for (index_t i = 0; i!=An; ++i) // for all actives u
-//         {
-//             tmpA = eA.block(0,2*i,2,2);
-//             //         C1111  *A11       + C1122  *A22       + C1112  *(A12       + A21    )
-//             tmp(0,0) = eC(0,0)*tmpA(0,0) + eC(0,1)*tmpA(1,1) + eC(0,2)*(tmpA(0,1) + tmpA(1,0));
-//             //         C2211  *A11       + C2222  *A22       + C2212  *(A12       + A21    )
-//             tmp(1,1) = eC(1,0)*tmpA(0,0) + eC(1,1)*tmpA(1,1) + eC(1,2)*(tmpA(0,1) + tmpA(1,0));
-//             //         C1211  *A11       + C1222  *A22       + C1212  *(A12       + A21    )
-//             tmp(0,1) = eC(2,0)*tmpA(0,0) + eC(2,1)*tmpA(1,1) + eC(2,2)*(tmpA(0,1) + tmpA(1,0));
-//             //         C2111  *A11       + C2122  *A22       + C2112  *(A12       + A21    )
-//             tmp(1,0) = eC(2,0)*tmpA(0,0) + eC(2,1)*tmpA(1,1) + eC(2,2)*(tmpA(0,1) + tmpA(1,0));
-
-//             res.block(0,2*i,2,2) = tmp;
-//         }
-//         return res;
-//     }
-
-//     index_t rows() const { return _A.rows(); }
-//     index_t cols() const { return _A.cols(); }
-//     void setFlag() const { _A.setFlag();_C.setFlag(); }
-
-//     void parse(gsSortedVector<const gsFunctionSet<Scalar>*> & evList) const
-//     { _A.parse(evList);_C.parse(evList); }
-
-//     const gsFeSpace<Scalar> & rowVar() const { return _A.rowVar(); }
-//     const gsFeSpace<Scalar> & colVar() const { return _A.colVar(); }
-//     index_t cardinality_impl() const { return _A.cardinality_impl(); }
-
-//     static constexpr bool rowSpan() {return E1::rowSpan();}
-//     static constexpr bool colSpan() {return E1::colSpan();}
-
-//     void print(std::ostream &os) const { os << "flatprod_expr("; _A.print(os);_C.print(os); os<<")"; }
-// };
-
-/**
-   TO ADD
- */
 template<class E1, class E2, class E3>
 class flatdot_expr  : public _expr<flatdot_expr<E1,E2,E3> >
 {
@@ -730,19 +574,6 @@ public:
         eB = _B.eval(k);
         eC = _C.eval(k);
 
-        // gsDebugVar(eA);
-        // gsDebugVar(eB);
-        // gsDebugVar(eC);
-
-        // gsDebugVar(eA.rows());
-        // gsDebugVar(eA.cols());
-        // gsDebugVar(_A.rows());
-        // gsDebugVar(_A.cols());
-        // gsDebugVar(eB.rows());
-        // gsDebugVar(eB.cols());
-        // gsDebugVar(_B.rows());
-        // gsDebugVar(_B.cols());
-
         GISMO_ASSERT(Bc==_A.rows(), "Dimensions: "<<Bc<<","<< _A.rows()<< "do not match");
         GISMO_ASSERT(_A.rowSpan(), "First entry should be rowSpan");
         GISMO_ASSERT(_B.colSpan(), "Second entry should be colSpan.");
@@ -754,13 +585,6 @@ public:
             for (index_t j = 0; j!=Bn; ++j) // for all actives v
             {
                 tmp.noalias() = eB.middleCols(i*Bc,Bc) * eA.middleCols(j*Ac,Ac);
-                // evaluate tmp11*C11 + tmp22*C22 + (tmp12+tmp21)*C12
-                // tmp(0,0) *= eC.at(0);
-                // tmp(1,1) *= eC.at(1);
-                // tmp(0,1) += tmp(1,0);
-                // tmp(0,1) *= eC.at(1);
-                // tmp(1,0) = 0.0;
-                // res(i,j) = tmp.sum();
 
                 tmp(0,0) *= eC.at(0);
                 tmp(0,1) *= eC.at(2);
@@ -810,7 +634,6 @@ public:
 
     flatdot2_expr(_expr<E1> const& A, _expr<E2> const& B, _expr<E3> const& C) : _A(A),_B(B),_C(C)
     {
-        //GISMO_ASSERT( _u.rows()*_u.cols() == _n*_m, "Wrong dimension"); //
     }
 
     const gsMatrix<Scalar> & eval(const index_t k) const
@@ -823,28 +646,10 @@ public:
         eB = _B.eval(k);
         eC = _C.eval(k);
 
-        // gsDebugVar(eA);
-        // gsDebugVar(eB);
-        // gsDebugVar(eC);
-
-        // gsDebugVar(eA.rows());
-        // gsDebugVar(eA.cols());
-        // gsDebugVar(_A.rows());
-        // gsDebugVar(_A.cols());
-        // gsDebugVar(eB.rows());
-        // gsDebugVar(eB.cols());
-        // gsDebugVar(_B.rows());
-        // gsDebugVar(_B.cols());
-
         GISMO_ASSERT(_B.rows()==_A.cols(), "Dimensions: "<<_B.rows()<<","<< _A.cols()<< "do not match");
         GISMO_ASSERT(_A.rowSpan(), "First entry should be rowSpan");
         GISMO_ASSERT(_B.colSpan(), "Second entry should be colSpan.");
         GISMO_ASSERT(_C.cols()==_B.rows(), "Dimensions: "<<_C.rows()<<","<< _B.rows()<< "do not match");
-
-        // NOTE: product moved to the loop since that is more consistent with the formulations
-        // for (index_t i = 0; i!=An; ++i)
-        //     for (index_t j = 0; j!=Ac; ++j)
-        //         eA.middleCols(i*Ac,Ac).row(j) *= eC(j);
 
         res.resize(An, Bn);
         for (index_t i = 0; i!=An; ++i)
@@ -904,9 +709,7 @@ public:
 
         conMetric = covMetric.inverse();
 
-        // conBasis.col(0) = conMetric(0,0)*covBasis.col(0)+conMetric(0,1)*covBasis.col(1)+conMetric(0,2)*covBasis.col(2);
         conBasis.col(1) = conMetric(1,0)*covBasis.col(0)+conMetric(1,1)*covBasis.col(1)+conMetric(1,2)*covBasis.col(2);
-        // conBasis.col(2) = conMetric(2,0)*covBasis.col(0)+conMetric(2,1)*covBasis.col(1)+conMetric(2,2)*covBasis.col(2);
 
         e1 = covBasis.col(0); e1.normalize();
         e2 = conBasis.col(1); e2.normalize();
@@ -1031,7 +834,6 @@ public:
 
         conBasis.col(0) = conMetric(0,0)*covBasis.col(0)+conMetric(0,1)*covBasis.col(1)+conMetric(0,2)*covBasis.col(2);
         conBasis.col(1) = conMetric(1,0)*covBasis.col(0)+conMetric(1,1)*covBasis.col(1)+conMetric(1,2)*covBasis.col(2);
-        // conBasis.col(2) = conMetric(2,0)*covBasis.col(0)+conMetric(2,1)*covBasis.col(1)+conMetric(2,2)*covBasis.col(2);
 
         e1 = covBasis.col(0); e1.normalize();
         e2 = conBasis.col(1); e2.normalize();
@@ -1129,18 +931,11 @@ template<class E1, class E2, class E3> EIGEN_STRONG_INLINE
 var2_expr<E1,E2,E3> var2(const E1 & u, const E2 & v, const gsGeometryMap<typename E1::Scalar> & G, const E3 & Ef)
 { return var2_expr<E1,E2,E3>(u,v, G, Ef); }
 
-// template<class E1, class E2> EIGEN_STRONG_INLINE
-// hessdot_expr<E1,E2> hessdot(const E1 & u, const E2 & v) { return hessdot_expr<E1,E2>(u, v); }
-
 template<class E> EIGEN_STRONG_INLINE
 deriv2_expr<E> deriv2(const E & u) { return deriv2_expr<E>(u); }
 
 template<class E1, class E2> EIGEN_STRONG_INLINE
 deriv2dot_expr<E1, E2> deriv2(const E1 & u, const E2 & v) { return deriv2dot_expr<E1, E2>(u,v); }
-
-// template<class E1, class E2> EIGEN_STRONG_INLINE
-// flatprod_expr<E1,E2> flatprod(const E1 & u, const E2 & v)
-// { return flatprod_expr<E1,E2>(u, v); }
 
 template<class E1, class E2, class E3> EIGEN_STRONG_INLINE
 flatdot_expr<E1,E2,E3> flatdot(const E1 & u, const E2 & v, const E3 & w)
@@ -1169,14 +964,11 @@ void evaluateFunction(gsExprEvaluator<T> ev, auto expression, gsMatrix<T> pt);
 template <class T>
 void constructSolution(gsExprAssembler<T> assembler, gsMultiPatch<T> mp_def);
 
-// To Do:
-// * struct for material model
 // Input is parametric coordinates of the surface \a mp
 template <class T>
 class gsMaterialMatrix : public gismo::gsFunction<T>
 {
   // Computes the material matrix for different material models
-  //
 protected:
     const gsFunctionSet<T> * _mp;
     const gsFunction<T> * _YoungsModulus;
@@ -1265,263 +1057,12 @@ public:
             C(2,0) =
             C(0,2) = C_constant*F0(0,0)*F0(0,1) + 1*mu*(2*F0(0,0)*F0(0,1));
             C(2,1) = C(1,2) = C_constant*F0(0,1)*F0(1,1) + 1*mu*(2*F0(0,1)*F0(1,1));
-
-            //gsDebugVar(C);
         }
     }
 
     // piece(k) --> for patch k
 
 }; //! [Include namespace]
-
-template <class T>
-class gsMaterialMatrixD : public gismo::gsFunction<T>
-{
-  // Computes the material matrix for different material models
-  //
-protected:
-    const gsFunctionSet<T> * _mp;
-    const gsFunction<T> * _YoungsModulus;
-    const gsFunction<T> * _PoissonRatio;
-    mutable gsMapData<T> _tmp;
-    mutable gsMatrix<T> Emat,Nmat;
-    mutable real_t E, nu, D_constant;
-
-public:
-    /// Shared pointer for gsMaterialMatrixD
-    typedef memory::shared_ptr< gsMaterialMatrixD > Ptr;
-
-    /// Unique pointer for gsMaterialMatrixD
-    typedef memory::unique_ptr< gsMaterialMatrixD > uPtr;
-
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    gsMaterialMatrixD(const gsFunctionSet<T> & mp, const gsFunction<T> & YoungsModulus,
-                   const gsFunction<T> & PoissonRatio) :
-    _mp(&mp), _YoungsModulus(&YoungsModulus), _PoissonRatio(&PoissonRatio), _mm_piece(nullptr)
-    {
-        _tmp.flags = NEED_JACOBIAN | NEED_NORMAL | NEED_VALUE;
-    }
-
-    ~gsMaterialMatrixD() { delete _mm_piece; }
-
-    GISMO_CLONE_FUNCTION(gsMaterialMatrixD)
-
-    short_t domainDim() const {return 2;}
-
-    short_t targetDim() const {return 9;}
-
-    mutable gsMaterialMatrixD<T> * _mm_piece; // todo: improve the way pieces are accessed
-
-    const gsFunction<T> & piece(const index_t k) const
-    {
-        delete _mm_piece;
-        _mm_piece = new gsMaterialMatrixD(_mp->piece(k), *_YoungsModulus, *_PoissonRatio);
-        return *_mm_piece;
-    }
-
-    //class .. matMatrix_z
-    // should contain eval_into(thickness variable)
-
-    // Input is parametric coordinates of the surface \a mp
-    void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const
-    {
-        // NOTE 1: if the input \a u is considered to be in physical coordinates
-        // then we first need to invert the points to parameter space
-        // _mp.patch(0).invertPoints(u, _tmp.points, 1e-8)
-        // otherwise we just use the input paramteric points
-        _tmp.points = u;
-
-        static_cast<const gsFunction<T>*>(_mp)->computeMap(_tmp);
-
-        // NOTE 2: in the case that parametric value is needed it suffices
-        // to evaluate Youngs modulus and Poisson's ratio at
-        // \a u instead of _tmp.values[0].
-        _YoungsModulus->eval_into(_tmp.values[0], Emat);
-        _PoissonRatio->eval_into(_tmp.values[0], Nmat);
-
-        result.resize( targetDim() , u.cols() );
-        for( index_t i=0; i< u.cols(); ++i )
-        {
-            gsAsMatrix<T, Dynamic, Dynamic> D = result.reshapeCol(i,3,3);
-
-            // Evaluate material properties on the quadrature point
-            E = Emat(0,i);
-            nu = Nmat(0,i);
-
-            D_constant = E/(1-nu*nu);
-            D(0,0) = D(1,1) = 1;
-            D(2,2) = (1-nu)/2;
-            D(0,1) = D(1,0) = nu;
-            D(2,0) = D(0,2) = D(2,1) = D(1,2) = 0;
-            D *= D_constant;
-
-            //gsDebugVar(C);
-        }
-    }
-
-    // piece(k) --> for patch k
-
-}; //! [Include namespace]
-
-/*
-    Todo:
-        * Improve for mu, E, phi as gsFunction instead of reals!!
-*/
-template <class T, int mat>
-class gsMaterialMatrixComp : public gismo::gsFunction<T>
-{
-  // Computes the material matrix for different material models
-  // NOTE: This material matrix is in local Cartesian coordinates and should be transformed!
-  // NOTE: To make this efficient, we can output all matrices stacked and use expressions to pick the 1st, second and third
-protected:
-    // const gsFunctionSet<T> * _mp;
-    const std::vector<std::pair<T,T>> _YoungsModuli;
-    const std::vector<T> _ShearModuli;
-    const std::vector<std::pair<T,T>> _PoissonRatios;
-    const std::vector<T> _thickness;
-    const std::vector<T> _phi;
-    mutable gsMapData<T> _tmp;
-    mutable real_t E1, E2, G12, nu12, nu21, t, t_tot, t_temp, z, z_mid, phi;
-    mutable gsMatrix<T> Tmat, Dmat;
-
-public:
-    /// Shared pointer for gsMaterialMatrixComp
-    typedef memory::shared_ptr< gsMaterialMatrixComp > Ptr;
-
-    /// Unique pointer for gsMaterialMatrixComp
-    typedef memory::unique_ptr< gsMaterialMatrixComp > uPtr;
-
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    gsMaterialMatrixComp(  //const gsFunctionSet<T> & mp,
-                        const std::vector<std::pair<T,T>> & YoungsModuli,
-                        const std::vector<T> & ShearModuli,
-                        const std::vector<std::pair<T,T>> & PoissonRatios,
-                        const std::vector<T> thickness,
-                        const std::vector<T> phi) :
-    // _mp(&mp),
-    _YoungsModuli(YoungsModuli),
-    _ShearModuli(ShearModuli),
-    _PoissonRatios(PoissonRatios),
-    _thickness(thickness),
-    _phi(phi)//,
-    // _mm_piece(nullptr)
-    {
-        _tmp.flags = NEED_JACOBIAN | NEED_NORMAL | NEED_VALUE;
-    }
-
-    // ~gsMaterialMatrixComp() { delete _mm_piece; }
-
-    GISMO_CLONE_FUNCTION(gsMaterialMatrixComp)
-
-    short_t domainDim() const {return 2;}
-
-    short_t targetDim() const {return 9;}
-
-    // mutable gsMaterialMatrixComp<T> * _mm_piece; // todo: improve the way pieces are accessed
-
-    // const gsFunction<T> & piece(const index_t k) const
-    // {
-    //     delete _mm_piece;
-    //     _mm_piece = new gsMaterialMatrixComp(_mp->piece(k), _YoungsModuli, _ShearModuli, _PoissonRatios, _thickness, _phi);
-    //     return *_mm_piece;
-    // }
-
-    // Input is parametric coordinates of the surface \a mp
-    void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const
-    {
-        // static_cast<const gsFunction<T>*>(_mp)->computeMap(_tmp);
-        GISMO_ASSERT(_YoungsModuli.size()==_PoissonRatios.size(),"Size of vectors of Youngs Moduli and Poisson Ratios is not equal: " << _YoungsModuli.size()<<" & "<<_PoissonRatios.size());
-        GISMO_ASSERT(_YoungsModuli.size()==_ShearModuli.size(),"Size of vectors of Youngs Moduli and Shear Moduli is not equal: " << _YoungsModuli.size()<<" & "<<_ShearModuli.size());
-        GISMO_ASSERT(_thickness.size()==_phi.size(),"Size of vectors of thickness and angles is not equal: " << _thickness.size()<<" & "<<_phi.size());
-        GISMO_ASSERT(_YoungsModuli.size()==_thickness.size(),"Size of vectors of material properties and laminate properties is not equal: " << _YoungsModuli.size()<<" & "<<_thickness.size());
-        GISMO_ASSERT(_YoungsModuli.size()!=0,"No laminates defined");
-
-        // Compute total thickness (sum of entries)
-        t_tot = std::accumulate(_thickness.begin(), _thickness.end(), 0.0);
-
-        // compute mid-plane height of total plate
-        z_mid = t_tot / 2.0;
-
-        // now we use t_temp to add the thickness of all plies iteratively
-        t_temp = 0.0;
-
-        // Initialize material matrix and result
-        Dmat.resize(3,3);
-        result.resize( targetDim(), 1 );
-
-        // Initialize transformation matrix
-        Tmat.resize(3,3);
-
-
-        for (size_t i = 0; i != _phi.size(); ++i) // loop over laminates
-        {
-            // Compute all quantities
-            E1 = _YoungsModuli[i].first;
-            E2 = _YoungsModuli[i].second;
-            G12 = _ShearModuli[i];
-            nu12 = _PoissonRatios[i].first;
-            nu21 = _PoissonRatios[i].second;
-            t = _thickness[i];
-            phi = _phi[i];
-
-            GISMO_ASSERT(nu21*E1 == nu12*E2, "No symmetry in material properties for ply "<<i<<". nu12*E2!=nu21*E1:\n"<<
-                    "\tnu12 = "<<nu12<<"\t E2 = "<<E2<<"\t nu12*E2 = "<<nu12*E2<<"\n"
-                  <<"\tnu21 = "<<nu21<<"\t E1 = "<<E1<<"\t nu21*E1 = "<<nu21*E1);
-
-            // Fill material matrix
-            Dmat(0,0) = E1 / (1-nu12*nu21);
-            Dmat(1,1) = E2 / (1-nu12*nu21);;
-            Dmat(2,2) = G12;
-            Dmat(0,1) = nu21*E1 / (1-nu12*nu21);
-            Dmat(1,0) = nu12*E2 / (1-nu12*nu21);
-            Dmat(2,0) = Dmat(0,2) = Dmat(2,1) = Dmat(1,2) = 0.0;
-
-            // Make transformation matrix
-            Tmat(0,0) = Tmat(1,1) = math::pow(math::cos(phi),2);
-            Tmat(0,1) = Tmat(1,0) = math::pow(math::sin(phi),2);
-            Tmat(2,0) = Tmat(0,2) = Tmat(2,1) = Tmat(1,2) = math::sin(phi) * math::cos(phi);
-            Tmat(2,0) *= -2.0;
-            Tmat(2,1) *= 2.0;
-            Tmat(1,2) *= -1.0;
-            Tmat(2,2) = math::pow(math::cos(phi),2) - math::pow(math::sin(phi),2);
-
-            // Compute laminate stiffness matrix
-            Dmat = Tmat.transpose() * Dmat * Tmat;
-
-            z = math::abs(z_mid - (t/2.0 + t_temp) ); // distance from mid-plane of plate
-
-            // Make matrices A, B and C
-            // [NOTE: HOW TO DO THIS NICELY??]
-            // result.reshape(3,3) += Dmat * t; // A
-            // result.reshape(3,3) += Dmat * t*z; // B
-            // result.reshape(3,3) += Dmat * ( t*z*z + t*t*t/12.0 ); // D
-            switch (mat)
-            {
-                case 0:
-                    result.reshape(3,3) += Dmat * t; // A
-                    break;
-                case 1:
-                    result.reshape(3,3) += Dmat * t; // A
-                    break;
-                case 2:
-                    result.reshape(3,3) += Dmat * t; // A
-                    break;
-            }
-
-            t_temp += t;
-        }
-
-        GISMO_ASSERT(t_tot==t_temp,"Total thickness after loop is wrong. t_temp = "<<t_temp<<" and sum(thickness) = "<<t_tot);
-
-        // Replicate for all points since the quantities are equal over the whole domain
-        result.replicate(1, u.cols());
-    }
-
-    // piece(k) --> for patch k
-
-};
 
 template <class T>
 gsMultiPatch<T> RectangularDomain(int n, int m, int p, int q, T L, T B);
@@ -1536,6 +1077,7 @@ int main(int argc, char *argv[])
     index_t numElevate = 1;
     index_t testCase = 1;
     bool nonlinear = false;
+    bool weak = false;
     std::string fn("pde/poisson2d_bvp.xml");
 
     real_t E_modulus = 1.0;
@@ -1555,6 +1097,7 @@ int main(int argc, char *argv[])
     cmd.addString( "f", "file", "Input XML file", fn );
     cmd.addSwitch("nl", "Solve nonlinear problem", nonlinear);
     cmd.addSwitch("plot", "Create a ParaView visualization file with the solution", plot);
+    cmd.addSwitch("weak", "Weak BCs", weak);
 
     try { cmd.getValues(argc,argv); } catch (int rv) { return rv; }
     //! [Parse command line]
@@ -1580,19 +1123,6 @@ int main(int argc, char *argv[])
         fn = "../extensions/unsupported/filedata/quarter_sphere.xml";
         gsReadFile<>(fn, mp);
     }
-    else if (testCase == 20)
-    {
-        // Unit square
-        // gsReadFile<>("planar/annulus_4p.xml", mp);
-        gsMultiPatch<> mp_old;
-        mp_old.addPatch( gsNurbsCreator<>::BSplineSquare(1) ); // degree
-        mp = mp_old.uniformSplit();
-        mp.computeTopology();
-        mp.embed(3);
-        E_modulus = 1;
-        thickness = 1;
-        PoissonRatio = 0;
-    }
     else
     {
         // Unit square
@@ -1601,8 +1131,7 @@ int main(int argc, char *argv[])
         mp.embed(3);
         E_modulus = 1e0;
         thickness = 1e0;
-        PoissonRatio = 0.0;
-        // PoissonRatio = 0.499;
+        PoissonRatio = 0.4999;
     }
     //! [Read input file]
 
@@ -1615,6 +1144,7 @@ int main(int argc, char *argv[])
         mp.uniformRefine();
 
     mp_def = mp;
+    gsWriteParaview(mp,"mp",1000,true);
 
     //! [Refinement]
     gsMultiBasis<> dbasis(mp);
@@ -1631,8 +1161,11 @@ int main(int argc, char *argv[])
     neu << 0, 0, 0;
 
     gsFunctionExpr<> displ("1",3);
+    gsConstantFunction<> displx(0.09317696,3);
+
 
     gsConstantFunction<> neuData(neu,3);
+    gsConstantFunction<> weakBC(neu,3);
 
     real_t pressure = 0.0;
     if (testCase == 1)
@@ -1659,46 +1192,26 @@ int main(int argc, char *argv[])
         bc.addCondition(boundary::west, condition_type::dirichlet, 0, 1 ); // unknown 1 - y
         bc.addCondition(boundary::west, condition_type::dirichlet, 0, 2 ); // unknown 2 - z
 
-        // ORIGINAL
         bc.addCornerValue(boundary::southwest, 0.0, 0, 0); // (corner,value, patch, unknown)
 
         bc.addCondition(boundary::east, condition_type::dirichlet, 0, 1 ); // unknown 1 - y
         bc.addCondition(boundary::east, condition_type::dirichlet, 0, 2 ); // unknown 2 - z
 
-        // NOT ORIGINAL
-        // bc.addCondition(boundary::west, condition_type::dirichlet, &displ, 0 ); // unknown 1 - x
-        // bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0 ); // unknown 1 - x
-        // bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0 ); // unknown 1 - x
-
         // Surface forces
         tmp << 0, 0, -90;
-
-        // for (index_t i=0; i!=3; ++i)
-        // {
-        //     bc.addCondition(boundary::north, condition_type::dirichlet, 0, 0, false, i ); // unknown 0 - x
-        //     bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0, false, i ); // unknown 1 - y
-        //     bc.addCondition(boundary::south, condition_type::dirichlet, 0, 0, false, i ); // unknown 2 - z
-        //     bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, i ); // unknown 2 - z
-        // }
-        // tmp << 0,0,-90;
     }
     else if (testCase == 3)
     {
         neu << 0, 0, -90;
         neuData.setValue(neu,3);
         // Diaphragm conditions
-        // bc.addCondition(boundary::west, condition_type::dirichlet, 0, 1 ); // unknown 1 - y
-        // bc.addCondition(boundary::west, condition_type::dirichlet, 0, 2 ); // unknown 2 - z
         bc.addCondition(boundary::west, condition_type::neumann, &neuData );
 
         // ORIGINAL
-        // bc.addCornerValue(boundary::southwest, 0.0, 0, 0); // (corner,value, patch, unknown)
-
         bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 1 - y
         bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 2 - z
 
         // NOT ORIGINAL
-        // bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0 ); // unknown 1 - x
         bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 1 - x
 
         // Surface forces
@@ -1711,19 +1224,18 @@ int main(int argc, char *argv[])
             bc.addCondition(boundary::north, condition_type::dirichlet, 0, 0, false, i ); // unknown 0 - x
             bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0, false, i ); // unknown 1 - y
             bc.addCondition(boundary::south, condition_type::dirichlet, 0, 0, false, i ); // unknown 2 - z
-            bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, i ); // unknown 2 - z
+            if (!weak)
+                bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, i ); // unknown 0 - x
+
         }
-        pressure = -1.0;
+        if (weak)
+            bc.addCondition(boundary::west, condition_type::weak_dirichlet, &weakBC ); // unknown 2 - z
+
+        tmp << 0, 0, -1;
     }
 
     else if (testCase == 6)
     {
-        // bc.addCondition(boundary::north, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        // bc.addCondition(boundary::north, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 1 - y
-        // bc.addCondition(boundary::north, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 2 - z
-
-        // bc.addCondition(boundary::south, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        // bc.addCondition(boundary::south, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 1 - y
         bc.addCondition(boundary::south, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 2 - z
 
         // Symmetry in x-direction:
@@ -1742,10 +1254,24 @@ int main(int argc, char *argv[])
 
     else if (testCase == 10)
     {
-        bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 1 - y
-        bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 2 - z
-        bc.addCondition(boundary::east, condition_type::dirichlet, &displ, 0, false, 2 ); // unknown 0 - x
+        for (index_t i=0; i!=3; ++i)
+        {
+            bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, i ); // unknown 2 - z
+        }
+        bc.addCondition(boundary::north, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 2 - z
+        bc.addCondition(boundary::south, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 2 - z
+
+        bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0 ,false,1);
+        bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0 ,false,2);
+
+        if (!weak)
+            bc.addCondition(boundary::east, condition_type::dirichlet, &displx, 0 ,false,0);
+        else
+        {
+            neu << -0.09317696, 0, 0;
+            weakBC.setValue(neu,3);
+            bc.addCondition(boundary::east, condition_type::weak_dirichlet, &weakBC);
+        }
 
         // Surface forces
         tmp.setZero();
@@ -1784,67 +1310,23 @@ int main(int argc, char *argv[])
             bc.addCondition(boundary::north, condition_type::dirichlet, 0, 0, false, i ); // unknown 0 - x
             bc.addCondition(boundary::east, condition_type::dirichlet, 0, 0, false, i ); // unknown 1 - y
             bc.addCondition(boundary::south, condition_type::dirichlet, 0, 0, false, i ); // unknown 2 - z
-            bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, i ); // unknown 2 - z
+            bc.addCondition(boundary::west, condition_type::dirichlet, 0, 0, false, i ); // unknown 0 - x
         }
 
-        bc.addCondition(boundary::north, condition_type::clamped, 0, 0 ,false,2);
-        bc.addCondition(boundary::east, condition_type::clamped, 0, 0 ,false,2);
-        bc.addCondition(boundary::south, condition_type::clamped, 0, 0 ,false,2);
-        bc.addCondition(boundary::west, condition_type::clamped, 0, 0 ,false,2);
-
-        tmp << 0,0,-1;
-    }
-    else if (testCase == 20)
-    {
-        // real_t Load = 1e-1;
-        // neu << 0, 0, -Load;
-        // neuData.setValue(neu,3);
-
-        // real_t T1 = 0.5;
-        // std::string nx = std::to_string(-T1) + "*cos(atan2(y,x))";
-        // std::string ny = std::to_string(-T1) + "*sin(atan2(y,x))";
-        // std::string nz = "0";
-        // neuDataFun1 = gsFunctionExpr<>(nx,ny,nz,3);
-
-        // for (index_t p=0; p!=mp.nPatches(); p++)
-        // {
-        //     // bc.addCondition(p,boundary::west, condition_type::neumann, &neuDataFun1 ); // unknown 0 - x
-        //     bc.addCondition(p,boundary::west, condition_type::neumann, &neuData ); // unknown 0 - x
-        //     bc.addCondition(p,boundary::east, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 1 - y
-        //     bc.addCondition(p,boundary::east, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 1 - y
-        //     bc.addCondition(p,boundary::east, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 2 - z
-        // }
-
-        bc.addCondition(0,boundary::south, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(0,boundary::south, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
-        bc.addCondition(0,boundary::south, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
-        bc.addCondition(0,boundary::west, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(0,boundary::west, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
-        bc.addCondition(0,boundary::west, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
-
-        // bc.addCondition(1,boundary::west, condition_type::neumann, &neuDataFun1 ); // unknown 0 - x
-        bc.addCondition(1,boundary::west, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(1,boundary::west, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
-        bc.addCondition(1,boundary::west, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
-        bc.addCondition(1,boundary::north, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(1,boundary::north, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
-        bc.addCondition(1,boundary::north, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
-
-        // bc.addCondition(2,boundary::south, condition_type::neumann, &neuDataFun1 ); // unknown 0 - x
-        bc.addCondition(2,boundary::south, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(2,boundary::south, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
-        bc.addCondition(2,boundary::south, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
-        bc.addCondition(2,boundary::east, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(2,boundary::east, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
-        bc.addCondition(2,boundary::east, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
-
-        // bc.addCondition(3,boundary::east, condition_type::neumann, &neuDataFun1 ); // unknown 0 - x
-        bc.addCondition(3,boundary::east, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(3,boundary::east, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
-        bc.addCondition(3,boundary::east, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
-        bc.addCondition(3,boundary::north, condition_type::dirichlet, 0, 0, false, 0 ); // unknown 0 - x
-        bc.addCondition(3,boundary::north, condition_type::dirichlet, 0, 0, false, 1 ); // unknown 0 - x
-        bc.addCondition(3,boundary::north, condition_type::dirichlet, 0, 0, false, 2 ); // unknown 0 - x
+        if (!weak)
+        {
+            bc.addCondition(boundary::north, condition_type::clamped, 0, 0 ,false,2);
+            bc.addCondition(boundary::east, condition_type::clamped, 0, 0 ,false,2);
+            bc.addCondition(boundary::south, condition_type::clamped, 0, 0 ,false,2);
+            bc.addCondition(boundary::west, condition_type::clamped, 0, 0 ,false,2);
+        }
+        else
+        {
+            bc.addCondition(boundary::north, condition_type::weak_clamped, &weakBC );
+            bc.addCondition(boundary::east, condition_type::weak_clamped, &weakBC );
+            bc.addCondition(boundary::south, condition_type::weak_clamped, &weakBC );
+            bc.addCondition(boundary::west, condition_type::weak_clamped, &weakBC ); // unknown 2 - z
+        }
 
 
         tmp << 0,0,-1;
@@ -1854,7 +1336,6 @@ int main(int argc, char *argv[])
     //! [Problem setup]
     gsExprAssembler<> A;
 
-    //gsInfo<<"Active options:\n"<< A.options() <<"\n";
     typedef gsExprAssembler<>::geometryMap geometryMap;
     typedef gsExprAssembler<>::variable    variable;
     typedef gsExprAssembler<>::space       space;
@@ -1871,25 +1352,18 @@ int main(int argc, char *argv[])
 
     // Set the discretization space
     space u = A.getSpace(dbasis, 3);
-    // u.setInterfaceCont(0); // todo: 1 (smooth basis)
-    // u.addBc( bc.get("Dirichlet") ); // (!) must be called only once
 
     u.setup(bc, dirichlet::interpolation, 0);
-
-    gsDebug<<u.mapper()<<"\n";
 
     // Solution vector and solution variable
     gsMatrix<> random;
     solution u_sol = A.getSolution(u,random);
 
     // gsFunctionExpr<> materialMat("1","0","0","0","1","0","0","0","1",3);
-    // variable mm = A.getCoeff(materialMat, G);
     gsFunctionExpr<> E(std::to_string(E_modulus),3);
     gsFunctionExpr<> nu(std::to_string(PoissonRatio),3);
     gsMaterialMatrix materialMat(mp, E, nu);
     variable mm = A.getCoeff(materialMat); // evaluates in the parametric domain, but the class transforms E and nu to physical
-    gsMaterialMatrixD materialMatD(mp, E, nu);
-    variable mmD = A.getCoeff(materialMatD); // evaluates in the parametric domain, but the class transforms E and nu to physical
 
     gsFunctionExpr<> t(std::to_string(thickness), 3);
     variable tt = A.getCoeff(t, G); // evaluates in the physical domain
@@ -1897,7 +1371,6 @@ int main(int argc, char *argv[])
     gsFunctionExpr<> mult2t("1","0","0","0","1","0","0","0","2",3);
     variable m2 = A.getCoeff(mult2t, G); // evaluates in the physical domain
 
-    // gsFunctionExpr<> force("0","0","1", 3);
     gsConstantFunction<> force(tmp,3);
     variable ff = A.getCoeff(force,G); // evaluates in the physical domain
 
@@ -1906,9 +1379,6 @@ int main(int argc, char *argv[])
     //! [Problem setup]
 
     //! [Solver loop]
-
-    // Set Dirichlet values
-    //A.options().setInt("DirichletValues", dirichlet::homogeneous);
 
     // Initialize the system
     A.initSystem(false);
@@ -1956,100 +1426,47 @@ int main(int argc, char *argv[])
 
     auto F        = ff;
 
-    // gsVector<> pt(2); pt.setConstant(0.25);
-    // gsVector<> pt2(3); pt2.setConstant(2);
-
-    // gsDebug<<ev.eval(var1(u,defG)  ,pt,1)<<"\n";
-    // gsDebug<<ev.eval(sn(defG)  ,pt,1)<<"\n";
-
-
-    // gsDebug<<ev.eval(E_m_der,pt,0)<<"\n";
-    // gsDebug<<ev.eval(E_f_der,pt,0)<<"\n";
-
-    // gsDebug<<ev.eval(N_der,pt,0)<<"\n";
-    // gsDebug<<ev.eval(M_der,pt,0)<<"\n";
-
-    // gsMatrix<> pt(7,2);
-    // pt<<0,0,
-    // 0,0.5,
-    // 0,1.0,
-    // 0.5,0,
-    // 1.0,0,
-    // 0.5,0.5,
-    // 1.0,1.0;
-    // pt = pt.transpose();
-    // gsDebugVar(pt);
-
-    // ! [Solve linear problem]
-
-    // assemble mass
-    // A.assemble(u*u.tr());
-    // gsDebugVar(A.matrix().toDense());
-    // gsDebugVar(A.matrix().rows());
-    // gsDebugVar(A.matrix().cols());
+    auto That   = cartcon(G);
+    auto Ttilde = cartcov(G);
+    auto E_m_plot = 0.5 * ( flat(jac(defG).tr()*jac(defG)) - flat(jac(G).tr()* jac(G)) ) * That; //[checked]
+    auto S_m_plot = E_m_plot * reshape(mm,3,3) * Ttilde; //[checked]
 
 
-    // assemble system
-    A.assemble(
-        // (N_der * cartcon(G) * (E_m_der * cartcon(G)).tr() + M_der * cartcon(G) * (E_f_der * cartcon(G)).tr()) * meas(G)
-        (N_der * (E_m_der).tr() + M_der * (E_f_der).tr()) * meas(G)
-        ,
-        // u * cartcon(G) * cartcon(G) * F  * meas(G)
-        u * F  * meas(G) + pressure * u * sn(defG).normalized() * meas(G)
-        );
+    gsVector<> pt(2); pt.setConstant(0.25);
+    gsVector<> pt2(3); pt2.setConstant(2);
 
-    // evaluateFunction(ev, reshape(mmA,3,3), pt); // evaluates an expression on a point
-    // evaluateFunction(ev, reshape(mmB,3,3), pt); // evaluates an expression on a point
-    // evaluateFunction(ev, reshape(mmC,3,3), pt); // evaluates an expression on a point
-    // evaluateFunction(ev, reshape(mmD,3,3), pt); // evaluates an expression on a point
-    // evaluateFunction(ev, S0, pt); // evaluates an expression on a point
-    // evaluateFunction(ev, S1, pt); // evaluates an expression on a point
-
-
-    // evaluateFunction(ev, N_der * cartcon(G) * (E_m_der * cartcon(G)).tr(), pt); // evaluates an expression on a point
-    // evaluateFunction(ev, (N_der * cartcon(G) * (E_m_der * cartcon(G)).tr()).tr(), pt); // evaluates an expression on a point
-
-    // gsDebugVar((jac(defG).tr() * jac(u) * jac(defG) * jac(u).tr()).isMatrix());
-    // gsDebugVar((jac(defG).tr() * jac(u) * jac(defG) * jac(u).tr()).colSpan());
-    // gsDebugVar((jac(defG).tr() * jac(u) * jac(defG) * jac(u).tr()).rowSpan());
-    // gsDebugVar((jac(defG).tr() * jac(u)).colSpan());
-    // gsDebugVar((jac(defG).tr() * jac(u)).rowSpan());
-    // gsDebugVar(((jac(defG).tr() * jac(u)).tr()).colSpan());
-    // gsDebugVar(((jac(defG).tr() * jac(u)).tr()).rowSpan());
-
-    // For Neumann (same for Dirichlet/Nitsche) conditions
+    // // For Neumann (same for Dirichlet/Nitsche) conditions
     variable g_N = A.getBdrFunction();
-    A.assembleRhsBc(u * g_N, bc.container("Neumann") );
 
-    // for weak dirichlet (DOES THIS HANDLE COMPONENTS?)
     real_t alpha_d = 1e3;
     A.assembleLhsRhsBc
     (
         alpha_d * u * u.tr()
         ,
-        alpha_d * u * (defG - G - g_N).tr()
+        alpha_d * (u * (defG - G) - u * (g_N) )
         ,
-        bc.container("dirichlet weak")
+        bc.container("Weak Dirichlet")
     );
 
     // for weak clamped
     real_t alpha_r = 1e3;
     A.assembleLhsRhsBc
     (
-        // alpha_r * ( sn(defG).tr()*sn(G) - 1.0 ) * ( flatdot2??? )
-        // +
-        alpha_r * ( var1(u,defG) * sn(G).tr() ).symmetrize()
+        alpha_r * ( sn(defG).tr()*nv(G) - sn(G).tr()*nv(G) ).val() * ( var2(u,u,defG,nv(G).tr()) )
+        +
+        alpha_r * ( ( var1(u,defG) * nv(G) ) * ( var1(u,defG) * nv(G) ).tr() )
         ,
-        alpha_r * ( sn(defG)*sn(G).tr() - sn(G)*sn(G).tr() ) * ( var1(u,defG) * sn(G).tr() )
+        alpha_r * ( sn(defG).tr()*sn(G) - sn(G).tr()*sn(G) ).val() * ( var1(u,defG) * sn(G) )
         ,
-        bc.container("clamped weak")
+        bc.container("Weak Clamped")
     );
 
+    A.assemble(
+        (N_der * (E_m_der).tr() + M_der * (E_f_der).tr()) * meas(G)
+        ,
+        u * F  * meas(G) + pressure * u * sn(defG).normalized() * meas(G)
+        );
 
-    // gsDebugVar(A.matrix().toDense());
-    // gsDebugVar(A.matrix().rows());
-    // gsDebugVar(A.matrix().cols());
-    gsDebugVar(A.rhs().transpose());
     gsVector<> Force = A.rhs();
 
 
@@ -2069,36 +1486,19 @@ int main(int argc, char *argv[])
         mp_def.patch(k).coefs() += cc;  // defG points to mp_def, therefore updated
     }
 
-    // gsDebugVar(mp_def.patch(0).coefs().transpose());
-
     gsMatrix<> result;
     u_sol.extractFull(result);
 
-    /*Something with Dirichlet homogenization*/
-
-    // auto sol1 = G + u_sol;
-    // auto sol2 = defG;
-
-    // auto nsol1= sn(G);
-    // // defG.registerData(G.source(), G.data())
-    // auto nsol2= sn(defG);
-
-    // evaluateFunction(ev, sol1, pt); // evaluates an expression on a point
-    // evaluateFunction(ev, sol2, pt); // evaluates an expression on a point
-    // evaluateFunction(ev, nsol1, pt); // evaluates an expression on a point
-    // evaluateFunction(ev, nsol2, pt); // evaluates an expression on a point
-
-    // evaluateFunction(ev, pressure * u * var1(u,defG) .tr(), pt); // evaluates an expression on a point
-    // evaluateFunction(ev, N_der * E_m_der.tr(), pt); // evaluates an expression on a point
-
     gsVector<> pt3(2);
-    pt3.setConstant(0.5);
+    pt3.setConstant(0.25);
     gsDebug<<ev.integral(meas(G))<<"\n";
     gsDebug<<ev.integral(meas(defG))<<"\n";
     gsDebug<<ev.eval(G,pt3)<<"\n";
     gsDebug<<ev.eval(defG,pt3)<<"\n";
 
-
+    ev.options().setInt("plot.npts", 5000);
+    ev.writeParaview(S_m_plot,defG,"stress");
+    gsInfo<<"Stresses\n"<<ev.eval(E_m_plot,pt3)<<"\n";
 
     // ! [Solve linear problem]
 
@@ -2133,17 +1533,34 @@ int main(int argc, char *argv[])
 
             // For Neumann (same for Dirichlet/Nitche) conditions
             variable g_N = A.getBdrFunction();
-            A.assembleRhsBc(u * g_N, bc.neumannSides() );
+            // A.assembleRhsBc(u * g_N, bc.neumannSides() );
 
-            // A.assemble(tt.val() * tt.val() * tt.val() / 3.0 * E_f_der2);
+            A.assembleLhsRhsBc
+            (
+                alpha_d * u * u.tr()
+                ,
+                -alpha_d * (u * (defG - G) - u * (g_N) )
+                ,
+                bc.container("Weak Dirichlet")
+            );
+            A.assembleLhsRhsBc
+            (
+                alpha_r * ( sn(defG).tr()*nv(G) - sn(G).tr()*nv(G) ).val() * ( var2(u,u,defG,nv(G).tr()) )
+                +
+                alpha_r * ( ( var1(u,defG) * nv(G) ) * ( var1(u,defG) * nv(G) ).tr() )
+                ,
+                -alpha_r * ( sn(defG).tr()*nv(G) - sn(G).tr()*nv(G) ).val() * ( var1(u,defG) * nv(G) )
+                ,
+                bc.container("Weak Clamped")
+            );
+
+
             // solve system
             solver.compute( A.matrix() );
             gsMatrix<> updateVector = solver.solve(A.rhs()); // this is the UPDATE
 
-            // gsDebugVar(A.matrix().toDense());
-            // gsDebugVar(A.rhs().transpose());
 
-            solVector += updateVector; // WHY??
+            solVector += updateVector;
             residual = A.rhs().norm();
 
             gsInfo<<"Iteration: "<< it
@@ -2156,7 +1573,7 @@ int main(int argc, char *argv[])
             residualOld = residual;
 
             // update deformed patch
-            u_sol.setSolutionVector(updateVector); // WHY?>
+            u_sol.setSolutionVector(updateVector);
             for ( size_t k =0; k!=mp_def.nPatches(); ++k) // Deform the geometry
             {
                 // // extract deformed geometry
@@ -2168,23 +1585,6 @@ int main(int argc, char *argv[])
                 break;
         }
     }
-
-    // evaluateFunction(ev, defG, pt); // evaluates an expression on a point
-    // evaluateFunction(ev, cartcov(defG).inv()*F, pt); // evaluates an expression on a point
-
-    // ! [Solve nonlinear problem]
-
-    // Penalize the matrix? (we need values for the DoFs to be enforced..
-    // function/call:  penalize_matrix(DoF_indices, DoF_values)
-    // otherwise: should we tag the DoFs inside "u" ?
-
-    // gsInfo<<"RHS rows = "<<A.rhs().rows()<<"\n";
-    // gsInfo<<"RHS cols = "<<A.rhs().cols()<<"\n";
-    // gsInfo<<"MAT rows = "<<A.matrix().rows()<<"\n";
-    // gsInfo<<"MAT cols = "<<A.matrix().cols()<<"\n";
-
-    // gsInfo<< A.rhs().transpose() <<"\n";
-    // gsInfo<< A.matrix().toDense()<<"\n";
 
     u_sol.setSolutionVector(solVector);
     mp_def = mp;
@@ -2241,18 +1641,6 @@ int main(int argc, char *argv[])
         gsWriteParaview<>( solField, "solution", 1000, true);
         // gsFileManager::open("solution.pvd");
     }
-
-    gsDebugVar(Force.sum());
-
-    A.initSystem(false);
-    A.assemble(u * F * meas(G) + pressure * u * sn(defG).normalized() * meas(G) - ( ( N * E_m_der.tr() + M * E_f_der.tr() ) * meas(G) ).tr());
-    gsVector<real_t> Fint = -(A.rhs() - Force);
-    gsDebugVar(Fint.sum());
-
-    // A.initSystem(false);
-    // A.assemble(u * meas(G) );
-    // gsVector<real_t> Sum = A.rhs();
-
     return EXIT_SUCCESS;
 
 }// end main
@@ -2340,44 +1728,3 @@ gsMultiPatch<T> RectangularDomain(int n, int m, int p, int q, T L, T B)
 
   return mp;
 }
-
-
-/*
-template<class T>
-void gsShellAssembler<T>::applyLoads()
-{
-    gsMatrix<T>        bVals;
-    gsMatrix<unsigned> acts,globalActs;
-
-    for (size_t i = 0; i< m_pLoads.numLoads(); ++i )
-    {
-        if ( m_pLoads[i].parametric )
-        {
-            m_bases.front().basis(m_pLoads[i].patch).active_into( m_pLoads[i].point, acts );
-            m_bases.front().basis(m_pLoads[i].patch).eval_into  ( m_pLoads[i].point, bVals);
-        }
-        else
-        {
-            gsMatrix<> forcePoint;
-            m_patches.patch(m_pLoads[i].patch).invertPoints(m_pLoads[i].point,forcePoint);
-            u.source().piece(m_pLoads[i].patch).active_into( forcePoint, acts );
-            u.source().piece(m_pLoads[i].patch).active_into( forcePoint, bVals);
-        }
-
-        // translate patch-local indices to global dof indices
-        for (size_t j = 0; j< 3; ++j)
-        {
-            if (m_pLoads[i].value[j] != 0.0)
-            {
-                u.dofMappers[j].localToGlobal(acts, m_pLoads[i].patch, globalActs);
-
-                for (index_t k=0; k < globalActs.rows(); ++k)
-                {
-                    if (int(globalActs(k,0)) < m_dofs)
-                        m_rhs(globalActs(k,0), 0) += bVals(k,0) * m_pLoads[i].value[j];
-                }
-            }
-        }
-    }
-}
-*/
