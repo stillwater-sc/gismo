@@ -9,7 +9,7 @@
 #
 # The docker containers provide all prerequisite software tools,
 # compilers and libraries and a complete build of the G+Smo library.
-FROM ubuntu:20.04
+FROM ubuntu:groovy-20210614
 MAINTAINER Matthias Moller <m.moller@tudelft.nl>
 
 ARG BUILD_RFC3339="1970-01-01T00:00:00Z"
