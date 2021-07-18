@@ -9,7 +9,7 @@
 #
 # The docker containers provide all prerequisite software tools,
 # compilers and libraries and a complete build of the G+Smo library.
-FROM ubuntu:16.04
+FROM ubuntu:xenial-20210416
 MAINTAINER Matthias Moller <m.moller@tudelft.nl>
 
 ARG BUILD_RFC3339="1970-01-01T00:00:00Z"
